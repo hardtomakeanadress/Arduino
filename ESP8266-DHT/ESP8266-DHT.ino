@@ -10,7 +10,7 @@
 #include <DHT.h>
 #define DHTTYPE DHT11
 #define DHTPIN  2 // D4
-int RELAYPIN = 0; // D2
+int RELAYPIN = 3; // D2
 
 const char* ssid     = "warz";
 const char* password = "paroladerezerva";
@@ -38,7 +38,6 @@ String webMessage = "";
 unsigned long previousMillis = 0;        // will store last temp was read
 long interval = 60000;              // interval at which to read sensor
 
-
 // reads the temp and humidity from the DHT sensor and sets the global variables for both
 void gettemperature() {
 
@@ -48,7 +47,6 @@ void gettemperature() {
   temp_f = dht.readTemperature();     // Read temperature as
   // Check if any reads failed and exit
   if (isnan(humidity) || isnan(temp_f)) {
-    Serial.println("Failed to read from DHT sensor!");
     return;
   }
 
@@ -70,12 +68,9 @@ void gettemperature() {
 void clearDataFile() // deletes all the stored data
 {
   File f = SPIFFS.open(dfName, "w");
-  if (!f) {
-    Serial.println("data file open to clear failed");
-  }
-  else
+  
+  if (f)
   {
-    Serial.println("-- Data file cleared =========");
     f.close();
   }
 }
@@ -88,18 +83,9 @@ void clearDataFile() // deletes all the stored data
 void removeFileLine(String fi)
 {
   File original = SPIFFS.open(fi, "r");
-  if (!original) {
-
-    Serial.println("original data file open failed");
-  }
 
   File temp = SPIFFS.open("tempfile.txt", "w");
-  if (!temp) {
 
-    Serial.println("temp data file open failed");
-  }
-
-  Serial.println("------ Removing Data Lines ------");
 
   //Lets read line by line from the file
   for (int i = 0; i < maxFileData; i++) {
@@ -108,7 +94,6 @@ void removeFileLine(String fi)
     if (i > 0) { // skip writing first line to the temp file
 
       temp.println(str);
-      //  Serial.println(str); // uncomment to view the file data in the serial console
     }
   }
 
@@ -117,16 +102,11 @@ void removeFileLine(String fi)
   temp.close();
   original.close();
 
-  Serial.print("size orig: "); Serial.print(origSize); Serial.println(" bytes");
-  Serial.print("size temp: "); Serial.print(tempSize); Serial.println(" bytes");
-
   if (! SPIFFS.remove(dfName))
-    Serial.println("Remove file failed");
 
 
   if (! SPIFFS.rename("tempfile.txt", dfName))
-    Serial.println("Rename file failed");
-  // dataLines--;
+    return;
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -135,32 +115,20 @@ void removeFileLine(String fi)
 
 void updateDataFile()
 {
-  Serial.println("dataLines: ");
-  Serial.println(dataLines);
   if (dataLines >= maxFileData)
   {
     removeFileLine(dfName);
   }
   ///////
   File f = SPIFFS.open(dfName, "a");
-  if (!f) {
-
-    Serial.println("data file open failed");
-  }
-  else
+  
+  if (f)
   {
-    Serial.println("====== Writing to data file =========");
-
     f.print(relayState); f.print(":");
     f.print(temp_f); f.print( ","); f.println(humidity);
-
-    Serial.println("Data file updated");
+    
     f.close();
   }
-
-  Serial.print("millis: ");
-  Serial.println(millis());
-
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -172,14 +140,9 @@ String readDataFile()
   String returnStr = "";
   File f = SPIFFS.open(dfName, "r");
 
-  if (!f)
-  {
-    Serial.println("Data File Open for read failed.");
 
-  }
-  else
+  if(f)
   {
-    Serial.println("----Reading Data File-----");
     dataLines = 0;
 
     while (f.available()) {
@@ -188,14 +151,6 @@ String readDataFile()
       dataLines++;
       String str = f.readStringUntil('\n');
       String switchState =  str.substring(0, str.indexOf(":")  );
-      /*
-          String tempF = str.substring(str.indexOf(":") + 1, str.indexOf(",")  );
-        //  String humid = str.substring(str.indexOf(",") + 1 );
-        //    String milliSecs = str.substring(str.indexOf("~") + 1 , str.indexOf("~"));
-        //   Serial.println(tempF);
-        //   Serial.println(humid);
-        //  Serial.println(str);
-      */
 
       returnStr += ",['" + switchState + "'," + str.substring(str.indexOf(":") + 1) + "]";
     }
@@ -203,13 +158,11 @@ String readDataFile()
   }
 
   return returnStr;
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
 //      creates the HTML string to be sent to the client                          //
 ////////////////////////////////////////////////////////////////////////////////////
-
 void setHTML()
 {
   webString = "<html><head>\n";
@@ -453,18 +406,12 @@ void handle_submit() {
       maxFileData = maxData;
       ///////
       File f = SPIFFS.open(fName, "w");
-      if (!f) {
-
-        Serial.println("file open for properties failed");
-      }
-      else
+      if (f)
       {
-        Serial.println("====== Writing to config file =========");
 
         f.print(heatOn); f.print( ","); f.print(heatOff);
         f.print("~"); f.print(sRate);
         f.print(":"); f.println(maxData);
-        Serial.println("Properties file updated");
         f.close();
       }
 
@@ -475,7 +422,6 @@ void handle_submit() {
   if (webMessage == "") {
     webMessage = "Settings Updated";
   }
-
 
   gettemperature();
 
@@ -506,31 +452,20 @@ void handle_root() {
 
 void setup(void)
 {
-  // You can open the Arduino IDE Serial Monitor window to see what the code is doing
-  Serial.begin(115200);  // Serial connection from ESP-01 via 3.3v console cable
-
   pinMode(RELAYPIN, OUTPUT);
   digitalWrite(RELAYPIN, LOW);
+  
   // Connect to WiFi network
   WiFi.begin(ssid, password);
 //  WiFi.config(IPAddress(192, 168, 0, 102), IPAddress(192, 168, 0, 1), IPAddress(255, 255, 255, 0));
 
-  Serial.print("\n\r \n\rWorking to connect");
-
   // Wait for connection
   while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
+    delay(1000);
   }
-  Serial.println("");
-  Serial.println("DHT Server");
-  Serial.print("Connected to ");
-  Serial.println(ssid);
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
 
   dht.begin();           // initialize temperature sensor
-  delay(10);
+  delay(100);
 
 
   SPIFFS.begin();
@@ -543,26 +478,16 @@ void setup(void)
 
   if (!f) {
     // no file exists so lets format and create a properties file
-    Serial.println("Please wait 30 secs for SPIFFS to be formatted");
-
     SPIFFS.format();
 
-    Serial.println("Spiffs formatted");
-
     f = SPIFFS.open(fName, "w");
-    if (!f) {
-
-      Serial.println("properties file open failed");
-    }
-    else
+    
+    if (f)
     {
       // write the defaults to the properties file
-      Serial.println("====== Writing to properties file =========");
-
       f.print(heatOn); f.print( ","); f.print(heatOff);
       f.print("~"); f.print(interval / 1000);
       f.print(":"); f.println(maxFileData);
-      Serial.println("Properties file created");
       dataLines = 1;
       f.close();
     }
@@ -571,7 +496,6 @@ void setup(void)
   else
   {
     // if the properties file exists on startup,  read it and set the defaults
-    Serial.println("Properties file exists. Reading.");
 
     while (f.available()) {
 
@@ -583,10 +507,6 @@ void setup(void)
       String sampleRate = str.substring(str.indexOf("~") + 1, str.indexOf(":") );
       String maxData = str.substring(str.indexOf(":") + 1 );
 
-      Serial.println(loSet);
-      Serial.println(hiSet);
-      Serial.println(sampleRate);
-      Serial.println(maxData);
 
       heatOn = loSet.toInt();
       heatOff = hiSet.toInt();
@@ -628,7 +548,6 @@ void setup(void)
 
   // start the web server
   server.begin();
-  Serial.println("HTTP server started");
 
 }
 
@@ -648,18 +567,11 @@ void loop(void)
 
     gettemperature();
 
-    Serial.print("Temp: ");
-    Serial.println(temp_f);
-    Serial.print("Humidity: ");
-    Serial.println(humidity);
-
     updateDataFile();
+    
     readDataFile();
   }
 
   server.handleClient();
 
 }
-
-
-
