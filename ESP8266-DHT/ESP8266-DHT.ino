@@ -44,19 +44,24 @@ void gettemperature() {
   // Reading temperature or humidity takes about 250 milliseconds!
   // Sensor readings may also be up to 2 seconds 'old' (it's a very slow sensor)
   humidity = dht.readHumidity();          // Read humidity (percent)
-  temp_f = dht.readTemperature();     // Read temperature as
+  temp_f   = dht.readTemperature();       // Read temperature
+  
   // Check if any reads failed and exit
   if (isnan(humidity) || isnan(temp_f)) {
+    humidity = 99;
+    temp_f   = 99;
     return;
   }
 
   // turn the relay switch Off or On depending on the temperature reading
-  if (temp_f <= heatOn)
+  if ((temp_f <= heatOn) &&
+      (temp_f != 99))
   {
     digitalWrite(RELAYPIN, HIGH);
     relayState = "ON";
   }
-  else if (temp_f >= heatOff)
+  else if ((temp_f >= heatOff) &&
+           (temp_f != 99))
   {
     digitalWrite(RELAYPIN, LOW);
     relayState = "OFF";
@@ -122,7 +127,9 @@ void updateDataFile()
   ///////
   File f = SPIFFS.open(dfName, "a");
   
-  if (f)
+  if ((f) &&
+      (humidity != 99) &&
+      (temp_f != 99))
   {
     f.print(relayState); f.print(":");
     f.print(temp_f); f.print( ","); f.println(humidity);
