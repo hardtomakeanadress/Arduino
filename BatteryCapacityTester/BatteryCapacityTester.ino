@@ -50,15 +50,12 @@ void measureResistor() {
 }
 
 void makeCalculation() {
-  if ( Bat_Volt > Bat_High) {
-    digitalWrite(MOSFET_Pin, LOW); // Turned Off the MOSFET // No discharge 
-    delay(1000);
-  }
-  else if(Bat_Volt < Bat_Low){
+
+  if(Bat_Volt <= Bat_Low){
     digitalWrite(MOSFET_Pin, LOW);
     delay(1000);
   }
-  else if (Bat_Volt > Bat_Low && Bat_Volt < Bat_High  ) { // Check if the battery voltage is within the safe limit
+  else if (Bat_Volt > Bat_Low) { // Check if the battery voltage is within the safe limit
     digitalWrite(MOSFET_Pin, HIGH);
     millisPassed = millis() - previousMillis;
     Current = (Bat_Volt - Res_Volt) / Res_Value;
