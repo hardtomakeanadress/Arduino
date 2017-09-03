@@ -15,6 +15,8 @@
   #define TINY_GSM_RX_BUFFER 256
 #endif
 
+#define TINY_GSM_MUX_COUNT 2
+
 #include <TinyGsmCommon.h>
 
 #define GSM_NL "\r\n"
@@ -234,7 +236,7 @@ public:
   }
 
   /*
-   * SIM card & Networ Operator functions
+   * SIM card functions
    */
 
   bool simUnlock(const char *pin) {
@@ -262,43 +264,6 @@ public:
     waitResponse();
     res.trim();
     return res;
-  }
-
-  int getSignalQuality() {
-    sendAT(GF("+CSQ"));
-    if (waitResponse(GF(GSM_NL "+CSQ:")) != 1) {
-      return 99;
-    }
-    int res = stream.readStringUntil(',').toInt();
-    waitResponse();
-    return res;
-  }
-
-  bool callAnswer() {
-    sendAT(GF("A"));
-    return waitResponse() == 1;
-  }
-
-  bool callNumber(const String& number) {
-    sendAT(GF("D"), number);
-    return waitResponse() == 1;
-  }
-
-  bool callHangup(const String& number) {
-    sendAT(GF("H"), number);
-    return waitResponse() == 1;
-  }
-
-  bool sendSMS(const String& number, const String& text) {
-    sendAT(GF("+CMGF=1"));
-    waitResponse();
-    sendAT(GF("+CMGS=\""), number, GF("\""));
-    if (waitResponse(GF(">")) != 1) {
-      return false;
-    }
-    stream.print(text);
-    stream.write((char)0x1A);
-    return waitResponse(60000L) == 1;
   }
 
   SimStatus getSimStatus(unsigned long timeout = 10000L) {
@@ -342,13 +307,25 @@ public:
     return res;
   }
 
+ /*
+  * Generic network functions
+  */
+
+  int getSignalQuality() {
+    sendAT(GF("+CSQ"));
+    if (waitResponse(GF(GSM_NL "+CSQ:")) != 1) {
+      return 99;
+    }
+    int res = stream.readStringUntil(',').toInt();
+    waitResponse();
+    return res;
+  }
+
   bool waitForNetwork(unsigned long timeout = 60000L) {
     for (unsigned long start = millis(); millis() - start < timeout; ) {
       RegStatus s = getRegistrationStatus();
       if (s == REG_OK_HOME || s == REG_OK_ROAMING) {
         return true;
-      } else if (s == REG_UNREGISTERED) {
-        return false;
       }
       delay(1000);
     }
@@ -400,20 +377,50 @@ public:
    * Phone Call functions
    */
 
+  bool callAnswer() {
+    sendAT(GF("A"));
+    return waitResponse() == 1;
+  }
+
+  bool callNumber(const String& number) {
+    sendAT(GF("D"), number);
+    return waitResponse() == 1;
+  }
+
+  bool callHangup(const String& number) {
+    sendAT(GF("H"), number);
+    return waitResponse() == 1;
+  }
+
   /*
    * Messaging functions
    */
 
+  // TODO
   void sendUSSD() {
   }
 
-  void sendSMS() {
+  bool sendSMS(const String& number, const String& text) {
+    sendAT(GF("+CSCS=\"gsm\""));
+    waitResponse();
+    sendAT(GF("+CMGF=1"));
+    waitResponse();
+    sendAT(GF("+CMGS=\""), number, GF("\""));
+    if (waitResponse(GF(">")) != 1) {
+      return false;
+    }
+    stream.print(text);
+    stream.write((char)0x1A);
+    stream.flush();
+    return waitResponse(60000L) == 1;
   }
+
 
   /*
    * Location functions
    */
-  void getLocation() {
+
+  void getGsmLocation() {
   }
 
   /*
@@ -460,7 +467,7 @@ private:
     }
     stream.write((uint8_t*)buff, len);
     stream.write((char)0x0D);
-
+    stream.flush();
     if (waitResponse(30000L, GF(GSM_NL "+TCPSEND:")) != 1) {
       return 0;
     }
@@ -491,7 +498,7 @@ private:
 
   bool streamSkipUntil(char c) { //TODO: timeout
     while (true) {
-      while (!stream.available()) {}
+      while (!stream.available()) { TINY_GSM_YIELD(); }
       if (stream.read() == c)
         return true;
     }
@@ -550,7 +557,7 @@ private:
             DBG("### Got: ", len, "->", sockets[mux]->rx.free());
           }
           while (len--) {
-            while (!stream.available()) {}
+            while (!stream.available()) { TINY_GSM_YIELD(); }
             sockets[mux]->rx.put(stream.read());
           }
           data = "";
@@ -590,7 +597,7 @@ finish:
 
 private:
   Stream&       stream;
-  GsmClient*    sockets[2];
+  GsmClient*    sockets[TINY_GSM_MUX_COUNT];
 };
 
 typedef TinyGsm::GsmClient TinyGsmClient;

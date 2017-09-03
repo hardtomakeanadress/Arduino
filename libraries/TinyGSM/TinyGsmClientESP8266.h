@@ -1,19 +1,21 @@
 /**
- * @file       TinyWiFiClientESP8266.h
+ * @file       TinyGsmClientESP8266.h
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
  * @date       Nov 2016
  */
 
-#ifndef TinyWiFiClientESP8266_h
-#define TinyWiFiClientESP8266_h
+#ifndef TinyGsmClientESP8266_h
+#define TinyGsmClientESP8266_h
 
 //#define TINY_GSM_DEBUG Serial
 
 #if !defined(TINY_GSM_RX_BUFFER)
   #define TINY_GSM_RX_BUFFER 256
 #endif
+
+#define TINY_GSM_MUX_COUNT 5
 
 #include <TinyGsmCommon.h>
 
@@ -249,6 +251,7 @@ private:
       return -1;
     }
     stream.write((uint8_t*)buff, len);
+    stream.flush();
     if (waitResponse(GF(GSM_NL "SEND OK" GSM_NL)) != 1) {
       return -1;
     }
@@ -328,7 +331,7 @@ private:
             DBG("### Got: ", len, "->", sockets[mux]->rx.free());
           }
           while (len--) {
-            while (!stream.available()) {}
+            while (!stream.available()) { TINY_GSM_YIELD(); }
             sockets[mux]->rx.put(stream.read());
           }
           data = "";
@@ -366,7 +369,7 @@ finish:
 
 private:
   Stream&       stream;
-  GsmClient*    sockets[5];
+  GsmClient*    sockets[TINY_GSM_MUX_COUNT];
 };
 
 typedef TinyGsm::GsmClient TinyGsmClient;
