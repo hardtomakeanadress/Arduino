@@ -30,6 +30,7 @@
 
 // Select your modem:
 #define TINY_GSM_MODEM_SIM800
+// #define TINY_GSM_MODEM_SIM808
 // #define TINY_GSM_MODEM_SIM900
 // #define TINY_GSM_MODEM_A6
 // #define TINY_GSM_MODEM_A7
@@ -72,6 +73,10 @@ void setup()
   // To skip it, call init() instead of restart()
   Serial.println("Initializing modem...");
   modem.restart();
+
+  String modemInfo = modem.getModemInfo();
+  Serial.print("Modem: ");
+  Serial.println(modemInfo);
 
   // Unlock your SIM card with a PIN
   //modem.simUnlock("1234");
