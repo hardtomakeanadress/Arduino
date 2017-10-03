@@ -1,11 +1,6 @@
 #include <DHT.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
-
-const char* ssid     = "warz";
-const char* password = "paroladerezerva";
-float h, t, v;
-
 #define DHTPIN 13 // what pin we’re connected to
 #define ADCPIN A0
 
@@ -15,25 +10,25 @@ WiFiClient client;
 void setup() {
   dht.begin();
   WiFi.hostname("balconySensor");
-  WiFi.begin(ssid, password);
+  WiFi.begin("warz", "paroladerezerva");
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
   }
 }
 
-void readRensors() {
-  h = dht.readHumidity();
-  t = dht.readTemperature();
-  v = analogRead(ADCPIN) * 4.33 / 1024.0;
+void loop() {
+  float h = dht.readHumidity();
+  float t = dht.readTemperature();
+  float v = analogRead(ADCPIN) * 4.33 / 1024.0;
 
-  if (isnan(h) || isnan(t)) {
-    delay(1000);
-    return;
-  }
-}
- 
-void sendRequest() {
-  
+// could interfere with the wifi / sleep /conect cycle, more testing need to be done
+// for now, I wil validate the data from the backend.
+
+//  if (isnan(h) || isnan(t)) {
+//    delay(1000);
+//    return;
+//  }
+
   if (WiFi.status()== WL_CONNECTED) { 
     
     HTTPClient http;    //Declare object of class HTTPClient
@@ -53,11 +48,6 @@ void sendRequest() {
     
     String responseCode = http.getString();       //Get the response payload
     http.end();  //Close connection
-  }  
-}
-
-void loop() {
-  readRensors();   
-  sendRequest();
-  ESP.deepSleep(600000000, WAKE_RF_DEFAULT);  
+  }
+  ESP.deepSleep(600000000,WAKE_RF_DEFAULT); 
 }
