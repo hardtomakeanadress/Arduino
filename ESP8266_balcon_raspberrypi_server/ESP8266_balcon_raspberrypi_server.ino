@@ -8,11 +8,14 @@ DHT dht(DHTPIN, DHT11, 15);
 WiFiClient client;
 
 void setup() {
+  pinMode(2, OUTPUT);
   dht.begin();
   WiFi.hostname("balconySensor");
-  WiFi.begin("warz", "paroladerezerva");
+  WiFi.begin("warz2", "paroladerezerva");
   while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
+    digitalWrite(LED_BUILTIN, HIGH);
+    delay(300);
+    digitalWrite(LED_BUILTIN, LOW);
   }
 }
 
