@@ -1,15 +1,15 @@
 #include <DHT.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
-#define DHTPIN 13 // what pin we’re connected to
-#define ADCPIN A0
+#define DHTPIN D4 // what pin we’re connected to
+//#define ADCPIN A0
 
-DHT dht(DHTPIN, DHT11, 15);
+DHT dht(DHTPIN, DHT22, 15);
 WiFiClient client;
 
 void setup() {
+  WiFi.hostname("BalconySensor");
   dht.begin();
-  WiFi.hostname("balconySensor");
   WiFi.begin("warz", "paroladerezerva");
   while (WiFi.status() != WL_CONNECTED) {
     delay(300);
@@ -19,15 +19,15 @@ void setup() {
 void loop() {
   float h = dht.readHumidity();
   float t = dht.readTemperature();
-  float v = analogRead(ADCPIN) * 4.33 / 1024.0;
+//  float v = analogRead(ADCPIN) * 4.33 / 1024.0;
 
 // could interfere with the wifi / sleep /conect cycle, more testing need to be done
 // for now, I wil validate the data from the backend.
 
-//  if (isnan(h) || isnan(t)) {
-//    delay(1000);
-//    return;
-//  }
+  if (isnan(h) || isnan(t)) {
+    delay(1000);
+    return;
+  }
 
   if (WiFi.status()== WL_CONNECTED) { 
     
