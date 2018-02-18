@@ -12,24 +12,10 @@
 #define BlynkApiWiringPi_h
 
 #include <Blynk/BlynkApi.h>
-#include <wiringPi.h>
 
 #ifndef BLYNK_INFO_DEVICE
     #define BLYNK_INFO_DEVICE  "Raspberry"
 #endif
-
-template<class Proto>
-void BlynkApi<Proto>::Init()
-{
-    wiringPiSetupGpio();
-}
-
-template<class Proto>
-BLYNK_FORCE_INLINE
-millis_time_t BlynkApi<Proto>::getMillis()
-{
-    return millis();
-}
 
 #ifdef BLYNK_NO_INFO
 
@@ -174,7 +160,7 @@ void BlynkApi<Proto>::processCmd(const void* buff, size_t len)
     } break;
     default:
         BLYNK_LOG2(BLYNK_F("Invalid HW cmd: "), cmd);
-        static_cast<Proto*>(this)->sendCmd(BLYNK_CMD_RESPONSE, static_cast<Proto*>(this)->currentMsgId, NULL, BLYNK_ILLEGAL_COMMAND);
+        static_cast<Proto*>(this)->sendCmd(BLYNK_CMD_RESPONSE, static_cast<Proto*>(this)->msgIdOutOverride, NULL, BLYNK_ILLEGAL_COMMAND);
     }
 }
 

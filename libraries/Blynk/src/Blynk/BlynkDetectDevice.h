@@ -13,13 +13,19 @@
 
 // General defines
 
+#define BLYNK_CONCAT(a, b) a ## b
+#define BLYNK_CONCAT2(a, b) BLYNK_CONCAT(a, b)
+
 #define BLYNK_STRINGIFY(x) #x
 #define BLYNK_TOSTRING(x) BLYNK_STRINGIFY(x)
+
 #define BLYNK_COUNT_OF(x) ((sizeof(x)/sizeof(0[x])) / ((size_t)(!(sizeof(x) % sizeof(0[x])))))
+
 #define BLYNK_ATTR_PACKED __attribute__ ((__packed__))
 #define BLYNK_NORETURN __attribute__ ((noreturn))
 #define BLYNK_UNUSED __attribute__((__unused__))
 #define BLYNK_DEPRECATED __attribute__ ((deprecated))
+#define BLYNK_CONSTRUCTOR __attribute__((constructor))
 
 // Causes problems on some platforms
 #define BLYNK_FORCE_INLINE inline //__attribute__((always_inline))
@@ -142,7 +148,7 @@
         #define BLYNK_INFO_DEVICE  "Particle"
         #endif
 
-    #elif defined(MBED_LIBRARY_VERSION)
+    #elif defined(__MBED__)
 
         #define BLYNK_INFO_DEVICE  "MBED"
         #define BLYNK_USE_128_VPINS
@@ -157,6 +163,23 @@
         #define BLYNK_INFO_DEVICE  "chipKIT Uno32"
         #else
         #define BLYNK_INFO_DEVICE  "chipKIT"
+        #endif
+
+    #elif defined(ARDUINO) && defined(ARDUINO_AMEBA)
+        #if defined(BOARD_RTL8710)
+        #define BLYNK_INFO_DEVICE  "RTL8710"
+        #define BLYNK_USE_128_VPINS
+        #define BLYNK_BUFFERS_SIZE 1024
+        #elif defined(BOARD_RTL8711AM)
+        #define BLYNK_INFO_DEVICE  "RTL8711AM"
+        #define BLYNK_USE_128_VPINS
+        #define BLYNK_BUFFERS_SIZE 1024
+        #elif defined(BOARD_RTL8195A)
+        #define BLYNK_INFO_DEVICE  "RTL8195A"
+        #define BLYNK_USE_128_VPINS
+        #define BLYNK_BUFFERS_SIZE 1024
+        #else
+        #define BLYNK_INFO_DEVICE  "Ameba"
         #endif
 
     #elif defined(ARDUINO) && defined(TEENSYDUINO)
