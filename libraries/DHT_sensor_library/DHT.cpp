@@ -152,8 +152,8 @@ boolean DHT::read(bool force) {
     InterruptLock lock;
 
     // End the start signal by setting data line high for 40 microseconds.
-    digitalWrite(_pin, HIGH);
-    delayMicroseconds(40);
+    // digitalWrite(_pin, HIGH);
+    // delayMicroseconds(40);
 
     // Now start reading the data line to get the value from the DHT sensor.
     pinMode(_pin, INPUT_PULLUP);
