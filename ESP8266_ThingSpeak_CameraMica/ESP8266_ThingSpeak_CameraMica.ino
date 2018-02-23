@@ -2,9 +2,9 @@
 
 //this is the "camera mica" channel
 
-String apiKey        = "7QOUBJXWOOUMQGN4";
-const char* ssid     = "warz";
-const char* password = "paroladerezerva";
+String apiKey        = "";
+const char* ssid     = "";
+const char* password = "";
 const char* server   = "api.thingspeak.com";
 
 uint32_t getVcc;

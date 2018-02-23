@@ -4,8 +4,8 @@
 
 #define DHTPIN 4 // what pin we’re connected to; on WemosD1 Mini pin is called D4
 
-char ssid[] = "warz";
-char pass[] = "paroladerezerva";
+char ssid[] = "";
+char pass[] = "";
 
 DHT dht(DHTPIN, DHT11, 15);
 WiFiClient client;

@@ -4,9 +4,9 @@
 //this is the "Balcon" channel
 // replace with your channel’s thingspeak API key
 
-String apiKey        = "R949QYHRFV0VIQ2X";
-const char* ssid     = "warz";
-const char* password = "paroladerezerva";
+String apiKey        = "";
+const char* ssid     = "";
+const char* password = "";
 const char* server   = "api.thingspeak.com";
 
 #define DHTPIN D4 // what pin we’re connected to

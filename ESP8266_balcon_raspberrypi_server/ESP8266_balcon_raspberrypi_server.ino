@@ -4,8 +4,8 @@
 #define DHTPIN D4 // what pin we’re connected to
 #define ADCPIN A0
 
-char ssid[] = "warz";
-char pass[] = "paroladerezerva";
+char ssid[] = "";
+char pass[] = "";
 
 DHT dht(DHTPIN, DHT11, 15);
 WiFiClient client;
