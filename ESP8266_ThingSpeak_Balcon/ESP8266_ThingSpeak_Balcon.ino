@@ -4,8 +4,8 @@
 //this is the "Weatherstation" channel; replace with your channel’s thingspeak API WRITE key
 
 // Wi-Fi Settings
-const char* ssid = "warz"; // your wireless network name (SSID)
-const char* password = "parola!derezerva"; // your Wi-Fi network password
+const char* ssid = ""; // your wireless network name (SSID)
+const char* password = ""; // your Wi-Fi network password
 
 //ThingSpeak settings
 const char* server = "192.168.0.122";

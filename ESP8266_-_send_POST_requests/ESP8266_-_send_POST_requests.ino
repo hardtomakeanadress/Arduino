@@ -4,8 +4,8 @@
 #include <ESP8266HTTPClient.h>
  
 /* Set these to your desired credentials. */
-const char *ssid = "warz";  //ENTER YOUR WIFI SETTINGS
-const char *password = "parola!derezerva";
+const char *ssid = "";  //ENTER YOUR WIFI SETTINGS
+const char *password = "";
 
 #define DHTPIN D4 // what pin we’re connected to
 #define ADCPIN A0
