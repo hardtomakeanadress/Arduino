@@ -7,21 +7,17 @@
 char ssid[] = "";
 char pass[] = "";
 
-DHT dht(DHTPIN, DHT11, 15);
+DHT dht(DHTPIN, DHT22, 15);
 WiFiClient client;
 
 void setup() {
-  Serial.begin(115200);
-  Serial.println("1");
+//  Serial.begin(115200);
   WiFi.hostname("BalconySensor");
-  Serial.println("2");
   WiFi.begin(ssid,pass);
-  Serial.println("3");
   dht.begin();
-  Serial.println("4");
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
-    Serial.println("Not connected yet");
+//    Serial.println("Not connected yet");
   }
 }
 
@@ -30,9 +26,9 @@ void loop() {
   float   t = dht.readTemperature();
   float   v = analogRead(ADCPIN) * (4.45 / 1023);
   String id = "balcony";
-  Serial.println(h);
-  Serial.println(t);
-  Serial.println(v);
+//  Serial.println(h);
+//  Serial.println(t);
+//  Serial.println(v);
   
 // is interfering with the sketch; we better validate the data on the server side  
 //  if (isnan(h) || isnan(t)) {
@@ -42,9 +38,9 @@ void loop() {
 //  }
 
   if (WiFi.status()== WL_CONNECTED) { 
-    Serial.println("Wifi connected !");
+//    Serial.println("Wifi connected !");
     HTTPClient http;    //Declare object of class HTTPClient
-    http.begin("http://192.168.0.120:80/post");      //Specify request destination
+    http.begin("http://192.168.0.122:8888/post");      //Specify request destination
     http.addHeader("Content-Type", "application/json");  //Specify content-type header
 
  // String postString format should be = "{\"temperature\": 25,\"humidity\": 65,\"voltage\": 3.17}";
@@ -59,10 +55,10 @@ void loop() {
            postString += id;
            postString += "\"";
            postString += "}";
-    Serial.println(postString);
+//    Serial.println(postString);
     int httpCode = http.POST(postString);   //Send the request
     
-    String responseCode = http.getString();       //Get the response payload
+    //String responseCode = http.getString();       //Get the response payload
     http.end();  //Close connection
   }
 //  delay(20000);

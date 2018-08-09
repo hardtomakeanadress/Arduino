@@ -1,5 +1,5 @@
 /* ESP8266 Programmable Thermostat IoT
-
+//senzor centrala termica
    Version 1.0  1/7/2017  Version 1.0   Damon Borgnino
 */
 #include <ESP8266WiFi.h>
