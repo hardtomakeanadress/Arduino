@@ -6,8 +6,8 @@
 #define DHTPIN 4 // what pin we’re connected to; only on WemosD1 Mini pin is called D4; on NodeMcu is 4
 //!!!!!!
 
-char ssid[] = "warz";
-char pass[] = "parola!derezerva";
+char ssid[] = "";
+char pass[] = "";
 
 DHT dht(DHTPIN, DHT11, 15);
 WiFiClient client;
