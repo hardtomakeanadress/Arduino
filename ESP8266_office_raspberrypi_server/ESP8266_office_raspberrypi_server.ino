@@ -3,13 +3,13 @@
 #include <ESP8266HTTPClient.h>
 
 //!!!!!!
-#define DHTPIN 4 // what pin we’re connected to; only on WemosD1 Mini pin is called D4; on NodeMcu is 4
+#define DHTPIN D4 // what pin we’re connected to; only on WemosD1 Mini pin is called D4; on NodeMcu is 4
 //!!!!!!
 
 char ssid[] = "";
 char pass[] = "";
 
-DHT dht(DHTPIN, DHT11, 15);
+DHT dht(DHTPIN, DHT, 15);
 WiFiClient client;
 
 void setup() {
