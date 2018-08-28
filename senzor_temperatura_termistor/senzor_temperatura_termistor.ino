@@ -6,22 +6,21 @@
 // which analog pin to connect
 #define THERMISTORPIN A0         
 // resistance at 25 degrees C
-#define THERMISTORNOMINAL 10640      
+#define THERMISTORNOMINAL 89000      
 // temp. for nominal resistance (almost always 25 C)
-#define TEMPERATURENOMINAL 23   
+#define TEMPERATURENOMINAL 26   
 // how many samples to take and average, more takes longer
 // but is more 'smooth'
 #define NUMSAMPLES 5
 // The beta coefficient of the thermistor (usually 3000-4000)
-#define BCOEFFICIENT 3950
+#define BCOEFFICIENT 4600
 // the value of the 'other' resistor
-#define SERIESRESISTOR 9900    
+#define SERIESRESISTOR 465000    
  
 int samples[NUMSAMPLES];
  
 void setup(void) {
   Serial.begin(9600);
-  
 }
  
 void loop(void) {
@@ -52,10 +51,7 @@ void loop(void) {
   steinhart += 1.0 / (TEMPERATURENOMINAL + 273.15); // + (1/To)
   steinhart = 1.0 / steinhart;                 // Invert
   steinhart -= 273.15;                         // convert to C
- 
   
-  Serial.print(steinhart);
-  Serial.println();
- 
+  Serial.println(steinhart);
   delay(2000);
 }

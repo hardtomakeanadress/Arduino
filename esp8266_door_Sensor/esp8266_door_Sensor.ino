@@ -12,7 +12,7 @@ const char *mqtt_client_name = "front_door"; // Client connections cant have the
 const char *mqtt_topic = "doors/front_door";
 //USER CONFIGURED SECTION END//
 
-const byte sensorPin = 13;
+const byte sensorPin = 2; //esp01 would not boot proper is pin2 is connected to ground at boot time, meaning when the door is closed ...change pin?
 byte sensorState;
 
 WiFiClient espClient;
@@ -65,11 +65,11 @@ void loop() {
   
   if (sensorState != sensorNewState) {
     if (sensorNewState == 1){
-      client.publish(mqtt_topic, "opened");
+      client.publish(mqtt_topic, "opened",true); // third parameter is to retain message
       Serial.println("Opened");
     }
     else {
-      client.publish(mqtt_topic, "closed");
+      client.publish(mqtt_topic, "closed", true); // third parameter is to retain message
       Serial.println("Closed");
     }
   sensorState =  sensorNewState;
