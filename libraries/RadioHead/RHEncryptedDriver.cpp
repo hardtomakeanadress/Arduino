@@ -2,7 +2,7 @@
 //
 // Author: Philippe.Rochat'at'gmail.com
 // Contributed to the RadioHead project by the author
-// $Id: RHEncryptedDriver.cpp,v 1.1 2017/07/25 05:26:50 mikem Exp mikem $
+// $Id: RHEncryptedDriver.cpp,v 1.3 2018/02/11 23:57:18 mikem Exp $
 
 #include <RHEncryptedDriver.h>
 #ifdef RH_ENABLE_ENCRYPTION_MODULE
@@ -19,7 +19,7 @@ bool RHEncryptedDriver::recv(uint8_t* buf, uint8_t* len)
     int h = 0; // Index of output _buffer
 
     bool status = _driver.recv(_buffer, len);
-    if (status)
+    if (status && buf && len)
     {
 	int blockSize = _blockcipher.blockSize(); // Size of blocks used by encryption
 	int nbBlocks = *len / blockSize; 	  // Number of blocks in that message
@@ -76,7 +76,11 @@ bool RHEncryptedDriver::send(const uint8_t* data, uint8_t len)
 #endif	
     int k = 0, j = 0; // k is block index, j is original message index
 #ifndef ALLOW_MULTIPLE_MSG	
-    for (k = 0; k < nbBpM && k * blockSize < len ; k++)
+#ifdef STRICT_CONTENT_LEN
+    for (k = 0; k < nbBpM && k * blockSize < len + 1; k++)
+#else
+    for (k = 0; k < nbBpM && k * blockSize < len; k++)
+#endif
     {
 	// k blocks in that message
 	int h = 0; // h is block content index

@@ -1,7 +1,7 @@
 // RH_ASK.h
 //
 // Copyright (C) 2014 Mike McCauley
-// $Id: RH_ASK.h,v 1.18 2017/07/25 05:26:50 mikem Exp mikem $
+// $Id: RH_ASK.h,v 1.18 2017/07/25 05:26:50 mikem Exp $
 
 #ifndef RH_ASK_h
 #define RH_ASK_h
@@ -241,6 +241,13 @@
 /// library, when built for ATTiny85, takes over timer 0, which prevents use
 /// of millis() etc but does permit analog outputs. This will affect the accuracy of millis() and time
 /// measurement.
+///
+/// \par  STM32 F4 Discovery with Arduino and Arduino_STM32
+/// You can initialise the driver like this:
+/// \code
+/// RH_ASK driver(2000, PA3, PA4);
+/// \endcode
+/// and connect the serail to pins PA3 and PA4
 class RH_ASK : public RHGenericDriver
 {
 public:
