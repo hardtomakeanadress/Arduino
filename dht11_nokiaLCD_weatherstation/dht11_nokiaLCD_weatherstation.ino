@@ -1,5 +1,3 @@
-
-
 float h,t;
 #include "U8glib.h"
 #include "DHT.h"
@@ -39,5 +37,5 @@ void loop(void) {
     draw();
   } while( u8g.nextPage() );
   
-  delay(500);  
+  delay(1000);  
 }
