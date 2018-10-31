@@ -5,7 +5,7 @@ float h,t;
 #define DHTPIN 2
 #define DHTTYPE DHT11
 
-//#define backlight_pin 11
+#define backlight_pin 11
  
 DHT dht(DHTPIN, DHTTYPE);
  
@@ -26,7 +26,7 @@ void draw(void) {
  
 void setup(void) {
   dht.begin();
-//  analogWrite(backlight_pin, 50);  
+  analogWrite(backlight_pin, 50);  
 }
  
 void loop(void) {
@@ -37,5 +37,5 @@ void loop(void) {
     draw();
   } while( u8g.nextPage() );
   
-  delay(1000);  
+  delay(500);  
 }
