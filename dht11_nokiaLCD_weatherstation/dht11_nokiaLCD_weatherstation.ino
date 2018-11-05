@@ -1,9 +1,12 @@
-float h,t;
+
 #include "U8glib.h"
 #include "DHT.h"
+#include "LowPower.h"
  
 #define DHTPIN 2
 #define DHTTYPE DHT11
+
+float h,t;
 
 //#define backlight_pin 11
  
@@ -29,12 +32,14 @@ void setup(void) {
 }
  
 void loop(void) {
-   h = dht.readHumidity(); 
-   t = dht.readTemperature();
+  LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
+  delay(1000);
+  h = dht.readHumidity(); 
+  t = dht.readTemperature();
   u8g.firstPage();  
   do {
     draw();
   } while( u8g.nextPage() );
   
-  delay(500);  
+//  delay(500);  
 }
