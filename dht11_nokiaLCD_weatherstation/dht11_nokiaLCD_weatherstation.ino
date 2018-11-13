@@ -4,9 +4,10 @@
 #include "LowPower.h"
  
 #define DHTPIN 2
+#define LIGHTPIN A0
 #define DHTTYPE DHT11
 
-float h,t;
+float h,t,l;
 
 //#define backlight_pin 11
  
@@ -27,19 +28,23 @@ void draw(void) {
 }
  
 void setup(void) {
+  Serial.begin(9600);
   dht.begin();
+  pinMode(LIGHTPIN, INPUT);
 //  analogWrite(backlight_pin, 50);  
 }
  
 void loop(void) {
-  LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
+//  LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
   delay(1000);
   h = dht.readHumidity(); 
   t = dht.readTemperature();
+  l = analogRead(LIGHTPIN);
+  Serial.println(l);
   u8g.firstPage();  
   do {
     draw();
   } while( u8g.nextPage() );
   
-//  delay(500);  
+  delay(500);  
 }
