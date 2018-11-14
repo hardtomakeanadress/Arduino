@@ -8,7 +8,7 @@
 
 float h,t,l;
 
-#define backlight_pin 11
+//#define backlight_pin 11
  
 DHT dht(DHTPIN, DHTTYPE);
  
@@ -39,19 +39,24 @@ void draw(void) {
 void setup(void) {
   dht.begin();
   pinMode(LIGHTPIN, INPUT);
-  analogWrite(backlight_pin, 50);  
 }
- 
-void loop(void) {
-//  LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
+
+void run_awake() {
   delay(1000);
   h = dht.readHumidity(); 
   t = dht.readTemperature();
-  l = map(analogRead(LIGHTPIN), 0, 1023, 99, 0);
+
   u8g.firstPage();  
   do {
     draw();
   } while( u8g.nextPage() );
-  
   delay(500);  
+}
+ 
+void loop(void) {
+  LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
+  l = map(analogRead(LIGHTPIN), 0, 1023, 99, 0);
+  if (l > 2) {
+    run_awake() ;
+  }
 }
