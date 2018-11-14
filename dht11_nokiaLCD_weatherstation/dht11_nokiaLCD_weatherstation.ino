@@ -6,8 +6,8 @@
 #define LIGHTPIN A0
 #define DHTTYPE DHT11
 
-float h,t,l;
-
+float h,t,light;
+int sleeping = 1;
 //#define backlight_pin 11
  
 DHT dht(DHTPIN, DHTTYPE);
@@ -17,7 +17,7 @@ U8GLIB_PCD8544 u8g(3, 4, 7, 5, 6);  // CLK=8, DIN=4, CE=7, DC=5, RST=6
 void draw(void) {
   int cursor_position = 50;
 
-  if (l < 10) {
+  if (light < 10) {
     cursor_position = 55;
   }
   
@@ -32,16 +32,28 @@ void draw(void) {
   u8g.print(h, 0);  
   u8g.drawStr(70, 28, "%");
   u8g.setPrintPos(cursor_position, 42);
-  u8g.print(l, 0);
+  u8g.print(light, 0);
   u8g.drawStr(70, 42, "%");
 }
  
 void setup(void) {
+//  analogReference(INTERNAL); // for future testing
   dht.begin();
   pinMode(LIGHTPIN, INPUT);
 }
 
+void run_asleep() {
+  sleeping = 0;
+  u8g.firstPage();  
+  do {
+    u8g.setFont(u8g_font_profont11);
+    u8g.drawStr(0, 20, "Zzz...sleeping");
+  } 
+  while( u8g.nextPage() );
+}
+  
 void run_awake() {
+  sleeping = 1;
   delay(1000);
   h = dht.readHumidity(); 
   t = dht.readTemperature();
@@ -54,9 +66,18 @@ void run_awake() {
 }
  
 void loop(void) {
-  LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
-  l = map(analogRead(LIGHTPIN), 0, 1023, 99, 0);
-  if (l > 2) {
+  
+  light = map(analogRead(LIGHTPIN), 0, 1023, 99, 0);
+  if (light > 3) {
     run_awake() ;
   }
+  else{
+    if (sleeping == 0) {
+      return;
+    }
+    else {
+      run_asleep();
+    }
+  }
+  LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
 }
