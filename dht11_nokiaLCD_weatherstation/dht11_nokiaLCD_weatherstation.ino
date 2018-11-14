@@ -7,7 +7,6 @@
 #define DHTTYPE DHT11
 
 float h,t,light;
-int sleeping = 1;
 //#define backlight_pin 11
  
 DHT dht(DHTPIN, DHTTYPE);
@@ -43,7 +42,6 @@ void setup(void) {
 }
 
 void run_asleep() {
-  sleeping = 0;
   u8g.firstPage();  
   do {
     u8g.setFont(u8g_font_profont11);
@@ -53,7 +51,6 @@ void run_asleep() {
 }
   
 void run_awake() {
-  sleeping = 1;
   delay(1000);
   h = dht.readHumidity(); 
   t = dht.readTemperature();
@@ -68,16 +65,13 @@ void run_awake() {
 void loop(void) {
   
   light = map(analogRead(LIGHTPIN), 0, 1023, 99, 0);
+  
   if (light > 3) {
     run_awake() ;
   }
   else{
-    if (sleeping == 0) {
-      return;
-    }
-    else {
       run_asleep();
     }
-  }
+
   LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
 }
