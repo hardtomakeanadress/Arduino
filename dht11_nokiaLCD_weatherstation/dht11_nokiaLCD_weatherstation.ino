@@ -4,9 +4,10 @@
  
 #define DHTPIN 2
 #define LIGHTPIN A0
+#define BATERRYPIN A1
 #define DHTTYPE DHT11
 
-float h,t,light;
+float h,t,light,volt;
 //#define backlight_pin 11
  
 DHT dht(DHTPIN, DHTTYPE);
@@ -21,24 +22,34 @@ void draw(void) {
   }
   
   u8g.setFont(u8g_font_profont11); 
-  u8g.drawStr(0, 14, "Temp:");  
-  u8g.drawStr(0, 28, "Hum:");
-  u8g.drawStr(0, 42, "Light:");
-  u8g.setPrintPos(50, 14 ); 
+  
+  u8g.drawStr(0, 10, "Temp:");  
+  u8g.drawStr(0, 21, "Hum:");
+  u8g.drawStr(0, 32, "Light:");
+  u8g.drawStr(0, 43, "Volt:");
+  
+  u8g.setPrintPos(50, 10 ); 
   u8g.print(t, 0);  
-  u8g.drawStr(70, 14, "C");
-  u8g.setPrintPos(50, 28);
+  u8g.drawStr(70, 10, "C");
+  
+  u8g.setPrintPos(50, 21);
   u8g.print(h, 0);  
-  u8g.drawStr(70, 28, "%");
-  u8g.setPrintPos(cursor_position, 42);
+  u8g.drawStr(70, 21, "%");
+  
+  u8g.setPrintPos(cursor_position, 32);
   u8g.print(light, 0);
-  u8g.drawStr(70, 42, "%");
+  u8g.drawStr(70, 32, "%");
+
+  u8g.setPrintPos(50, 43);
+  u8g.print(volt, 0);  
+  u8g.drawStr(70, 43, "V");
 }
  
 void setup(void) {
 //  analogReference(INTERNAL); // for future testing
   dht.begin();
   pinMode(LIGHTPIN, INPUT);
+  pinMode(BATERRYPIN, INPUT);
 }
 
 void run_asleep() {
@@ -54,6 +65,7 @@ void run_awake() {
   delay(1000);
   h = dht.readHumidity(); 
   t = dht.readTemperature();
+  volt = analogRead(BATERRYPIN);
 
   u8g.firstPage();  
   do {
@@ -66,11 +78,11 @@ void loop(void) {
   
   light = map(analogRead(LIGHTPIN), 0, 1023, 99, 0);
   
-  if (light > 3) {
+  if (light > 2) {
     run_awake() ;
   }
   else{
-      run_asleep();
+    run_asleep();
     }
 
   LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
