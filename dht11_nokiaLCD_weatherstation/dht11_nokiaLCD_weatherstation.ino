@@ -40,13 +40,12 @@ void draw(void) {
   u8g.print(light, 0);
   u8g.drawStr(70, 32, "%");
 
-  u8g.setPrintPos(50, 43);
-  u8g.print(volt, 0);  
+  u8g.setPrintPos(43, 43);
+  u8g.print(volt, 1);  
   u8g.drawStr(70, 43, "V");
 }
  
 void setup(void) {
-//  analogReference(INTERNAL); // for future testing
   dht.begin();
   pinMode(LIGHTPIN, INPUT);
   pinMode(BATERRYPIN, INPUT);
@@ -65,7 +64,18 @@ void run_awake() {
   delay(1000);
   h = dht.readHumidity(); 
   t = dht.readTemperature();
-  volt = analogRead(BATERRYPIN);
+
+  //change analog reference to 1.1V internal
+  analogReference(INTERNAL);                
+
+  // make a "dry read" that we are not using
+  analogRead(BATERRYPIN);    
+
+  //wait for voltage to stabilize                        
+  delay(100);    
+
+  //start using the reading value
+  volt = (analogRead(BATERRYPIN) * 2.65 ) / 1023.0; 
 
   u8g.firstPage();  
   do {
@@ -75,8 +85,16 @@ void run_awake() {
 }
  
 void loop(void) {
+  //change back to default analog referance
+  analogReference(DEFAULT); 
+
+  //make a "dry" read that we are not using
+  analogRead(LIGHTPIN); 
+
+  //wait for voltage to stabilize
+  delay(100); 
   
-  light = map(analogRead(LIGHTPIN), 0, 1023, 99, 0);
+  light = map(analogRead(LIGHTPIN), 0, 1023, 99, 0); 
   
   if (light > 2) {
     run_awake() ;
