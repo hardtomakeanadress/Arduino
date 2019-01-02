@@ -60,11 +60,9 @@ void loop() {
   if (sensorState != sensorNewState) {
     if (sensorNewState == 1){
       client.publish(mqtt_topic, "opened",true); // third parameter is to retain message
-      Serial.println("Opened");
     }
     else {
       client.publish(mqtt_topic, "closed", true); // third parameter is to retain message
-      Serial.println("Closed");
     }
   sensorState =  sensorNewState;
   }
