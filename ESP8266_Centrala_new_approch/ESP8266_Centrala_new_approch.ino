@@ -1,4 +1,4 @@
-//this is for bare module esp12e with adapter plate
+//updated for esp01
 
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
@@ -6,12 +6,10 @@
 
   //DHT Sensor Settings
 #define DHTTYPE DHT11
-#define DHTPIN  13 // 
-
-DHT dht(DHTPIN, DHT11,15);
-
+#define DHTPIN  2 // 
   //Relay Control Pin & Settings
-int RELAYPIN = 2; // 
+int RELAYPIN = 3; // 
+DHT dht(DHTPIN, DHTTYPE,15);
 
 unsigned long startMillis;
 unsigned long currentMillis;
@@ -20,8 +18,8 @@ unsigned long interval = 120000;
 float sensor_humidity,sensor_temperature;
 float control_temperature = 22.0; //we set a default value
 
-char humidityData[5];
-char temperatureData[5];
+char humidityData[10];
+char temperatureData[10];
 
 const char* ssid     = "warz";
 const char* password = "parola!derezerva";
@@ -36,8 +34,6 @@ const char *control_temp = "home/rooms/kitchen/control/control_temp"; //get desi
 WiFiClient espClient;
 PubSubClient client(espClient);
 
-
-
 bool actionTime() {
   if (currentMillis - startMillis >= interval)  //test whether the interval has elapsed
   {
@@ -48,12 +44,19 @@ bool actionTime() {
     return false;
 }
 
-void reconnect() {
+void getAndSendMQTTDAta(){
+  client.subscribe(control_temp);
+  delay(100);
+  client.publish(humidity_topic,humidityData);
+  delay(100);
+  client.publish(temperature_topic,temperatureData);
+  delay(100);    
+}
+
+void reconnectToServer() {
   while (!client.connected()) {
     if (client.connect("TestHeating")) {
-      client.subscribe(control_temp);
-      client.publish(humidity_topic,humidityData);
-      client.publish(temperature_topic,temperatureData);
+      getAndSendMQTTDAta();  
     } 
     else {
       delay(2000);
@@ -67,25 +70,17 @@ void callback(char* topic, byte* payload, unsigned int length) {
     payloadMessage[i] = char(payload[i]);
   }
   control_temperature = atof(payloadMessage);
-  triggerTempUpdate();
-}
-
-void triggerTempUpdate() {
-  if (sensor_temperature < control_temperature) {
-    digitalWrite(RELAYPIN, LOW); //reverse this to high
-  } 
-  else
-    digitalWrite(RELAYPIN, HIGH);    //  reverse this to LOW
+  controlHeating();
 }
 
 void handleSensorData(){
   delay(1000);
   sensor_humidity    = dht.readHumidity(); 
   sensor_temperature = dht.readTemperature();
-  Serial.println(sensor_humidity);
-  Serial.println(sensor_temperature);
+  
   String humData = String(sensor_humidity); 
   String tempData = String(sensor_temperature);
+  
   humData.toCharArray(humidityData,(humData.length() + 1));
   tempData.toCharArray(temperatureData,(tempData.length() + 1));
 }
@@ -95,40 +90,35 @@ void setup(){
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
-    Serial.println("wifi not connected");
   }
   dht.begin();
   pinMode(RELAYPIN, OUTPUT);
-  digitalWrite(RELAYPIN, HIGH); //reverse this to low
+  digitalWrite(RELAYPIN, LOW); 
   
   client.setServer(mqttServer, mqttPort);
   client.setCallback(callback);
   
   startMillis = millis();
-  Serial.begin(9600);
-  Serial.println("end of setup");
+}
+
+void controlHeating() {
+  if (sensor_temperature < control_temperature) {
+    digitalWrite(RELAYPIN, HIGH); 
+  } 
+  else
+    digitalWrite(RELAYPIN, LOW); 
 }
 
 void loop(){
   currentMillis = millis();
   handleSensorData();
-
-  if (actionTime()) {
-    client.publish(humidity_topic,humidityData);
-    client.publish(temperature_topic,temperatureData);
-    Serial.println("from loop>actiontime");
-    Serial.println(humidityData);
-    Serial.println(temperatureData);
-    if (sensor_temperature < control_temperature) {
-      digitalWrite(RELAYPIN, LOW); //reverse this to HIGH
-    } 
-    else
-      digitalWrite(RELAYPIN, HIGH); //reverse this to LOW
+  controlHeating();
+  if (actionTime() && client.connected()) {
+    getAndSendMQTTDAta();
   }
-  
-  if (!client.connected()){
-    reconnect();
-  }
+  else
+    reconnectToServer();
+    
   client.loop();
-  Serial.println("end of loop");
+  delay(10000);
 }
