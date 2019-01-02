@@ -21,8 +21,8 @@ float control_temperature = 22.0; //we set a default value
 char humidityData[10];
 char temperatureData[10];
 
-const char* ssid     = "warz";
-const char* password = "parola!derezerva";
+const char* ssid     = "";
+const char* password = "";
 
 const char* mqttServer = "192.168.0.107";
 const int mqttPort = 1883;
