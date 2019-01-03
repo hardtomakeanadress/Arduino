@@ -457,13 +457,12 @@ void handle_root() {
 // first funtion to run at power up //
 //////////////////////////////////////
 
-void setup(void)
-{
+void setup(void){ 
+  WiFi.hostname("CentralHeatingUnit");
+  WiFi.begin(ssid, password);
+  
   pinMode(RELAYPIN, OUTPUT);
   digitalWrite(RELAYPIN, LOW);
-  
-  // Connect to WiFi network
-  WiFi.begin(ssid, password);
 //  WiFi.config(IPAddress(192, 168, 0, 102), IPAddress(192, 168, 0, 1), IPAddress(255, 255, 255, 0));
 
   // Wait for connection
