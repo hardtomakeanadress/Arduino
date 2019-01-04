@@ -6,9 +6,9 @@
 
   //DHT Sensor Settings
 #define DHTTYPE DHT11
-#define DHTPIN  13 // 
+#define DHTPIN  2 // 
   //Relay Control Pin & Settings
-int RELAYPIN = 2; // 
+int RELAYPIN = 3; // 
 DHT dht(DHTPIN, DHTTYPE,15);
 
 unsigned long startMillis;
@@ -18,8 +18,9 @@ unsigned long interval = 180000;  //3 min
 int sensor_humidity,sensor_temperature;
 int control_temperature = 20; //we set a default value
 
-char humidityData[2];
-char temperatureData[2];
+char humidityData[10];
+char temperatureData[10];
+char heatingStatus[10];
 
 const char* ssid     = "warz";
 const char* password = "parola!derezerva";
@@ -27,10 +28,10 @@ const char* password = "parola!derezerva";
 const char* mqttServer = "192.168.0.107";
 const int mqttPort = 1883;
 
-const char *temperature_topic = "home/rooms/playroom/sensor/temperature"; //send temp
-const char *humidity_topic = "home/rooms/playroom/sensor/humidity";     // send hum
-const char *control_temp = "home/rooms/playroom/control/control_temp"; //get desired temp
-const char *sensor_status = "home/rooms/playroom/sensor/status"; // heating: on/off
+const char *temperature_topic = "home/rooms/kitchen/sensor/temperature"; //send temp
+const char *humidity_topic = "home/rooms/kitchen/sensor/humidity";     // send hum
+const char *control_temp = "home/rooms/kitchen/control/control_temp"; //get desired temp
+const char *heating_status = "home/rooms/kitchen/heating/status"; // heating: on/off
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -39,7 +40,6 @@ bool actionTime() {
   if (currentMillis - startMillis >= interval){
     startMillis = currentMillis;  //IMPORTANT to save the start time of the current LED state.
     return true;
-    Serial.println("Action TIME !~");
   }
   else
     return false;
@@ -52,14 +52,13 @@ void getAndSendMQTTDAta(){
   delay(100);
   client.publish(temperature_topic,temperatureData);
   delay(100);
-  Serial.println("in GEtandsendmQTT data");    
+  client.publish(heating_status, heatingStatus);
 }
 
 void reconnectToServer() {
   while (!client.connected()) {
-    if (client.connect("playroom")) {
+    if (client.connect("KitchenSensor")) {
       getAndSendMQTTDAta();
-      Serial.println("Reconected ok, after getandsendmqttdata");  
     } 
     else {
       delay(2000);
@@ -73,9 +72,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
     payloadMessage[i] = char(payload[i]);
   }
   control_temperature = atoi(payloadMessage);
-  Serial.print("We got this temperature: ");
-  Serial.println(control_temperature);
-//  controlHeating();   //testing - temp control only from loop ; this is to eliminate bad connection and bad calls from topic-brocker connection
+  controlHeating();
 }
 
 void handleSensorData(){
@@ -84,21 +81,18 @@ void handleSensorData(){
   
   String humData = String(sensor_humidity); 
   String tempData = String(sensor_temperature);
-  Serial.print(humData);
-  Serial.print("|");
-  Serial.print(tempData);
   humData.toCharArray(humidityData,(humData.length() + 1));
   tempData.toCharArray(temperatureData,(tempData.length() + 1));
 }
 
 void setup(){
-  WiFi.hostname("PlayroomSensor");
+  WiFi.hostname("KitchenSensor");
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
   }
+  pinMode(RELAYPIN, FUNCTION_3);
   dht.begin();
-  Serial.begin(9600);
   pinMode(RELAYPIN, OUTPUT);
   digitalWrite(RELAYPIN, LOW); 
   
@@ -106,19 +100,19 @@ void setup(){
   client.setCallback(callback);
   
   startMillis = millis();
-  Serial.println("End of setup function");
 }
 
 void controlHeating() {
+  String buffer = "";
   if (sensor_temperature < control_temperature) {
+    buffer = "ON";
+    buffer.toCharArray(heatingStatus,(buffer.length() + 1));
     digitalWrite(RELAYPIN, HIGH);
-    client.publish(sensor_status,"ON");
-    Serial.println("Heat ON");
   } 
   else{
+    buffer = "OFF";
+    buffer.toCharArray(heatingStatus,(buffer.length() + 1));
     digitalWrite(RELAYPIN, LOW);
-    client.publish(sensor_status,"OFF");
-    Serial.println("Heat OFF");
   }
 }
 
@@ -129,10 +123,8 @@ void loop(){
   controlHeating();
   if (actionTime() && client.connected()) {
     getAndSendMQTTDAta();
-    Serial.println("After getandsend mqtt data");
   }
   else
     reconnectToServer();
   client.loop();
-  Serial.println("after client.loop");
 }
