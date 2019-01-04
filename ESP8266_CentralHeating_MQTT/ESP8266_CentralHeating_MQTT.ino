@@ -67,12 +67,15 @@ void reconnectToServer() {
 }
 
 void callback(char* topic, byte* payload, unsigned int length) {
+  int oldControlTemp = control_temperature;
   char payloadMessage[2];
   for (int i = 0; i < length; i++) {
     payloadMessage[i] = char(payload[i]);
   }
   control_temperature = atoi(payloadMessage);
-  controlHeating();
+  if (oldControlTemp != control_temperature) {
+    controlHeating();
+  }
 }
 
 void handleSensorData(){
