@@ -21,6 +21,8 @@ int control_temperature = 20; //we set a default value
 char humidityData[10];
 char temperatureData[10];
 char heatingStatus[10];
+char allText[1000];
+String text;
 
 const char* ssid     = "warz";
 const char* password = "parola!derezerva";
@@ -32,6 +34,7 @@ const char *temperature_topic = "home/rooms/kitchen/sensor/temperature"; //send 
 const char *humidity_topic = "home/rooms/kitchen/sensor/humidity";     // send hum
 const char *control_temp = "home/rooms/kitchen/control/control_temp"; //get desired temp
 const char *heating_status = "home/rooms/kitchen/heating/status"; // heating: on/off
+const char *outputText = "home/rooms/kitchen/sensor/text"; // serial.print sort off
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -45,6 +48,11 @@ bool actionTime() {
     return false;
 }
 
+void addOutputText(String blabla) {
+  text += blabla;
+  text += "|";
+}
+
 void getAndSendMQTTDAta(){
   client.subscribe(control_temp);
   delay(100);
@@ -53,6 +61,8 @@ void getAndSendMQTTDAta(){
   client.publish(temperature_topic,temperatureData);
   delay(100);
   client.publish(heating_status, heatingStatus);
+  delay(100);
+  addOutputText("getAndSendMQTTDAta");
 }
 
 void reconnectToServer() {
@@ -64,6 +74,7 @@ void reconnectToServer() {
       delay(2000);
     }
   }
+  addOutputText("reconnectToServer");
 }
 
 void callback(char* topic, byte* payload, unsigned int length) {
@@ -86,6 +97,7 @@ void handleSensorData(){
   String tempData = String(sensor_temperature);
   humData.toCharArray(humidityData,(humData.length() + 1));
   tempData.toCharArray(temperatureData,(tempData.length() + 1));
+  addOutputText("handleSensorData");
 }
 
 void setup(){
@@ -117,6 +129,7 @@ void controlHeating() {
     buffer.toCharArray(heatingStatus,(buffer.length() + 1));
     digitalWrite(RELAYPIN, LOW);
   }
+  addOutputText(buffer);
 }
 
 void loop(){
@@ -129,5 +142,9 @@ void loop(){
   }
   else
     reconnectToServer();
+  text.toCharArray(allText,(text.length() + 1));
+  client.publish(outputText, allText);
+  char allText[1000]; //this should clear the text in the variable, hopefully 
+  text = "";
   client.loop();
 }
