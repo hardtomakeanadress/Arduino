@@ -21,11 +21,9 @@ int control_temperature = 20; //we set a default value
 char humidityData[10];
 char temperatureData[10];
 char heatingStatus[10];
-char allText[1000];
-String text;
 
-const char* ssid     = "warz";
-const char* password = "parola!derezerva";
+const char* ssid     = "";
+const char* password = "";
 
 const char* mqttServer = "192.168.0.107";
 const int mqttPort = 1883;
@@ -34,7 +32,6 @@ const char *temperature_topic = "home/rooms/kitchen/sensor/temperature"; //send 
 const char *humidity_topic = "home/rooms/kitchen/sensor/humidity";     // send hum
 const char *control_temp = "home/rooms/kitchen/control/control_temp"; //get desired temp
 const char *heating_status = "home/rooms/kitchen/heating/status"; // heating: on/off
-const char *outputText = "home/rooms/kitchen/sensor/text"; // serial.print sort off
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -48,21 +45,15 @@ bool actionTime() {
     return false;
 }
 
-void addOutputText(String blabla) {
-  text += blabla;
-  text += "|";
-}
-
 void getAndSendMQTTDAta(){
   client.subscribe(control_temp);
-  delay(100);
+  delay(200);
   client.publish(humidity_topic,humidityData);
-  delay(100);
+  delay(200);
   client.publish(temperature_topic,temperatureData);
-  delay(100);
+  delay(200);
   client.publish(heating_status, heatingStatus);
-  delay(100);
-  addOutputText("getAndSendMQTTDAta");
+  delay(200);
 }
 
 void reconnectToServer() {
@@ -74,19 +65,15 @@ void reconnectToServer() {
       delay(2000);
     }
   }
-  addOutputText("reconnectToServer");
 }
 
 void callback(char* topic, byte* payload, unsigned int length) {
-  int oldControlTemp = control_temperature;
   char payloadMessage[2];
   for (int i = 0; i < length; i++) {
     payloadMessage[i] = char(payload[i]);
   }
   control_temperature = atoi(payloadMessage);
-  if (oldControlTemp != control_temperature) {
-    controlHeating();
-  }
+//  controlHeating();    //maybe not make this call from here
 }
 
 void handleSensorData(){
@@ -97,7 +84,6 @@ void handleSensorData(){
   String tempData = String(sensor_temperature);
   humData.toCharArray(humidityData,(humData.length() + 1));
   tempData.toCharArray(temperatureData,(tempData.length() + 1));
-  addOutputText("handleSensorData");
 }
 
 void setup(){
@@ -129,22 +115,22 @@ void controlHeating() {
     buffer.toCharArray(heatingStatus,(buffer.length() + 1));
     digitalWrite(RELAYPIN, LOW);
   }
-  addOutputText(buffer);
 }
 
 void loop(){
   currentMillis = millis();
   delay(5000);
   handleSensorData();
-  controlHeating();
-  if (actionTime() && client.connected()) {
-    getAndSendMQTTDAta();
+  
+  if (actionTime()) {
+    controlHeating();
+    if(client.connected()) {
+      getAndSendMQTTDAta();    
+    }
+    else {
+      reconnectToServer();  
+    }
   }
-  else
-    reconnectToServer();
-  text.toCharArray(allText,(text.length() + 1));
-  client.publish(outputText, allText);
-  char allText[1000]; //this should clear the text in the variable, hopefully 
-  text = "";
+
   client.loop();
 }

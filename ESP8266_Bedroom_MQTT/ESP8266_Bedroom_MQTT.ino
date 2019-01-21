@@ -2,16 +2,16 @@
 #include <PubSubClient.h>
 #include <DHT.h>
 
-#define DHTPIN 4 // ESP12E barebone
+#define DHTPIN 2 // what pin we’re connected to
 #define ADCPIN A0
 
-DHT dht(DHTPIN, DHT22, 15);
+DHT dht(DHTPIN, DHT11, 15);
 
 WiFiClient espClient;
 PubSubClient client(espClient);
 
 float sensor_humidity,sensor_temperature,sensor_voltage;
-unsigned int readingInterval = 30;  //minutes
+unsigned int readingInterval = 1;  //minutes
 
 char humidityData[10];
 char temperatureData[10];
@@ -23,12 +23,12 @@ const char* password = "";
 const char* mqttServer = "192.168.0.107";
 const int mqttPort = 1883;
 
-const char *temperature_topic = "home/rooms/balcony/sensor/temperature";
-const char *humidity_topic = "home/rooms/balcony/sensor/humidity";
-const char *voltage_topic = "home/rooms/balcony/sensor/voltage";
+const char *temperature_topic = "home/rooms/bedroom/sensor/temperature";
+const char *humidity_topic = "home/rooms/bedroom/sensor/humidity";
+const char *voltage_topic = "home/rooms/bedroom/sensor/voltage";
 
 void setup(){
-  WiFi.hostname("BalconySensor");
+  WiFi.hostname("BedroomSensor");
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
@@ -49,7 +49,7 @@ void getAndSendMQTTDAta(){
 
 void reconnectToServer() {
   while (!client.connected()) {
-    if (client.connect("BalconySensor")) {
+    if (client.connect("BedroomSensor")) {
       getAndSendMQTTDAta();
     } 
     else {
@@ -61,7 +61,7 @@ void reconnectToServer() {
 void handleSensorData(){
   sensor_humidity    = dht.readHumidity(); 
   sensor_temperature = dht.readTemperature();
-  sensor_voltage     = analogRead(ADCPIN)* 5.62 / 1023;  //5.62 is voltage divider raport ; R1/R2
+  sensor_voltage     = analogRead(ADCPIN) * (4.2 / 1023);
   
   String humData = String(sensor_humidity); 
   String tempData = String(sensor_temperature);
