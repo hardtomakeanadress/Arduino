@@ -6,6 +6,10 @@
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 #include <PCD8544.h>
+#include <OneWire.h>
+ 
+ 
+OneWire  ds(D8);  // on pin D4 (a 4.7K resistor is necessary)
 
 #define ADCPIN A0
 static PCD8544 lcd;
@@ -29,25 +33,21 @@ const char *humidity_topic = "home/rooms/bedroom/sensor/temperature";
 const char *voltage_topic = "home/rooms/bedroom/sensor/luminosity";
 
 void setup(){
-//  WiFi.hostname("BedroomSensor");
-//  WiFi.begin(ssid, password);
-//  while (WiFi.status() != WL_CONNECTED) {
-//    delay(500);
-//  }
+  WiFi.hostname("BedroomSensor");
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+  }
   lcd.begin(84, 48);  
-//  client.setServer(mqttServer, mqttPort);
+  client.setServer(mqttServer, mqttPort);
 }
 
 
 void loop() {
   sensor_luminosity = map(analogRead(ADCPIN), 100, 1023, 0, 100);
-//sensor_luminosity = analogRead(ADCPIN);
   lcd.setCursor(0, 0);
   lcd.clearLine(); //or lcd.clear()
   lcd.print(sensor_luminosity);
   lcd.setCursor(0, 1);
   lcd.print("Hello, World!");
 }
-
-
-/* EOF - HelloWorld.ino */
