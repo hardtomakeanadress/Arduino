@@ -1,25 +1,17 @@
-int sensorValue;
-bool isTriggered = false;
+const byte ledPin = 13;
+const byte interruptPin = 2;
+volatile byte state = LOW;
 
 void setup() {
-  // initialize serial communication at 9600 bits per second:
-  Serial.begin(9600);
+  pinMode(ledPin, OUTPUT);
+  pinMode(interruptPin, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(interruptPin), blink, LOW);
 }
 
 void loop() {
-  isTriggered();
+  digitalWrite(ledPin, state);
 }
 
-void isTriggered() {
-  
-  sensorValue = analogRead(A0);
-  
-  if (sensorValue <= 30) {
-    isTriggered = true;
-    }
-  else {
-    isTriggered = false;
-    }
-  
-  
+void blink() {
+  state = !state;
 }

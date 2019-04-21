@@ -97,7 +97,7 @@ void run_awake() {
   //start using the reading value
   volt = (analogRead(BATERRYPIN) * 2.65 ) / 1023.0; 
 
-  //get the struct data rady for transmission
+  //get the struct data ready for transmission
   data.humidity = h;
   data.temperature = t;
   data.light = light;

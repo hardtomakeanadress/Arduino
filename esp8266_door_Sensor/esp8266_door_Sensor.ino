@@ -44,7 +44,7 @@ void reconnect() {
     } 
     else {
       // Wait 5 seconds before retrying
-      delay(5000);
+      delay(1000);
     }
   }
 }

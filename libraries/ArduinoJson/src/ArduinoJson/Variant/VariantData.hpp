@@ -1,10 +1,11 @@
 // ArduinoJson - arduinojson.org
-// Copyright Benoit Blanchon 2014-2018
+// Copyright Benoit Blanchon 2014-2019
 // MIT License
 
 #pragma once
 
 #include "../Misc/SerializedValue.hpp"
+#include "../Polyfills/gsl/not_null.hpp"
 #include "VariantContent.hpp"
 
 namespace ARDUINOJSON_NAMESPACE {
@@ -67,10 +68,7 @@ class VariantData {
   }
 
   CollectionData *asArray() {
-    if (type() == VALUE_IS_ARRAY)
-      return &_content.asCollection;
-    else
-      return 0;
+    return isArray() ? &_content.asCollection : 0;
   }
 
   const CollectionData *asArray() const {
@@ -78,10 +76,7 @@ class VariantData {
   }
 
   CollectionData *asObject() {
-    if (type() == VALUE_IS_OBJECT)
-      return &_content.asCollection;
-    else
-      return 0;
+    return isObject() ? &_content.asCollection : 0;
   }
 
   const CollectionData *asObject() const {
@@ -95,7 +90,7 @@ class VariantData {
       case VALUE_IS_OBJECT:
         return toObject().copyFrom(src._content.asCollection, pool);
       case VALUE_IS_OWNED_STRING:
-        return setOwnedString(RamStringWrapper(src._content.asString), pool);
+        return setOwnedString(RamStringAdapter(src._content.asString), pool);
       case VALUE_IS_OWNED_RAW:
         return setOwnedRaw(
             serialized(src._content.asRaw.data, src._content.asRaw.size), pool);
@@ -141,11 +136,15 @@ class VariantData {
   }
 
   bool isArray() const {
-    return type() == VALUE_IS_ARRAY;
+    return (_flags & VALUE_IS_ARRAY) != 0;
   }
 
   bool isBoolean() const {
     return type() == VALUE_IS_BOOLEAN;
+  }
+
+  bool isCollection() const {
+    return (_flags & COLLECTION_MASK) != 0;
   }
 
   bool isInteger() const {
@@ -159,16 +158,24 @@ class VariantData {
   }
 
   bool isString() const {
-    return (type() == VALUE_IS_LINKED_STRING ||
-            type() == VALUE_IS_OWNED_STRING);
+    return type() == VALUE_IS_LINKED_STRING || type() == VALUE_IS_OWNED_STRING;
   }
 
   bool isObject() const {
-    return type() == VALUE_IS_OBJECT;
+    return (_flags & VALUE_IS_OBJECT) != 0;
   }
 
   bool isNull() const {
     return type() == VALUE_IS_NULL;
+  }
+
+  void remove(size_t index) {
+    if (isArray()) _content.asCollection.remove(index);
+  }
+
+  template <typename TAdaptedString>
+  void remove(TAdaptedString key) {
+    if (isObject()) _content.asCollection.remove(key);
   }
 
   void setBoolean(bool value) {
@@ -182,14 +189,18 @@ class VariantData {
   }
 
   void setLinkedRaw(SerializedValue<const char *> value) {
-    setType(VALUE_IS_LINKED_RAW);
-    _content.asRaw.data = value.data();
-    _content.asRaw.size = value.size();
+    if (value.data()) {
+      setType(VALUE_IS_LINKED_RAW);
+      _content.asRaw.data = value.data();
+      _content.asRaw.size = value.size();
+    } else {
+      setType(VALUE_IS_NULL);
+    }
   }
 
   template <typename T>
   bool setOwnedRaw(SerializedValue<T> value, MemoryPool *pool) {
-    char *dup = wrapString(value.data(), value.size()).save(pool);
+    char *dup = adaptString(value.data(), value.size()).save(pool);
     if (dup) {
       setType(VALUE_IS_OWNED_RAW);
       _content.asRaw.data = dup;
@@ -223,30 +234,36 @@ class VariantData {
   }
 
   void setLinkedString(const char *value) {
-    setType(VALUE_IS_LINKED_STRING);
-    _content.asString = value;
+    if (value) {
+      setType(VALUE_IS_LINKED_STRING);
+      _content.asString = value;
+    } else {
+      setType(VALUE_IS_NULL);
+    }
   }
 
   void setNull() {
     setType(VALUE_IS_NULL);
   }
 
-  void setOwnedString(const char *s) {
+  void setOwnedString(not_null<const char *> s) {
     setType(VALUE_IS_OWNED_STRING);
-    _content.asString = s;
+    _content.asString = s.get();
   }
 
-  template <typename T>
-  bool setOwnedString(T value, MemoryPool *pool) {
-    char *dup = value.save(pool);
-    if (dup) {
-      setType(VALUE_IS_OWNED_STRING);
-      _content.asString = dup;
+  bool setOwnedString(const char *s) {
+    if (s) {
+      setOwnedString(make_not_null(s));
       return true;
     } else {
       setType(VALUE_IS_NULL);
       return false;
     }
+  }
+
+  template <typename T>
+  bool setOwnedString(T value, MemoryPool *pool) {
+    return setOwnedString(value.save(pool));
   }
 
   void setUnsignedInteger(UInt value) {
@@ -266,11 +283,50 @@ class VariantData {
     return _content.asCollection;
   }
 
+  size_t memoryUsage() const {
+    switch (type()) {
+      case VALUE_IS_OWNED_STRING:
+        return strlen(_content.asString) + 1;
+      case VALUE_IS_OWNED_RAW:
+        return _content.asRaw.size;
+      case VALUE_IS_OBJECT:
+      case VALUE_IS_ARRAY:
+        return _content.asCollection.memoryUsage();
+      default:
+        return 0;
+    }
+  }
+
+  size_t nesting() const {
+    return isCollection() ? _content.asCollection.nesting() : 0;
+  }
+
   size_t size() const {
-    if (type() == VALUE_IS_OBJECT || type() == VALUE_IS_ARRAY)
-      return _content.asCollection.size();
-    else
-      return 0;
+    return isCollection() ? _content.asCollection.size() : 0;
+  }
+
+  VariantData *addElement(MemoryPool *pool) {
+    if (isNull()) toArray();
+    if (!isArray()) return 0;
+    return _content.asCollection.add(pool);
+  }
+
+  VariantData *getElement(size_t index) const {
+    return isArray() ? _content.asCollection.get(index) : 0;
+  }
+
+  template <typename TAdaptedString>
+  VariantData *getMember(TAdaptedString key) const {
+    return isObject() ? _content.asCollection.get(key) : 0;
+  }
+
+  template <typename TAdaptedString>
+  VariantData *getOrAddMember(TAdaptedString key, MemoryPool *pool) {
+    if (isNull()) toObject();
+    if (!isObject()) return 0;
+    VariantData *var = _content.asCollection.get(key);
+    if (var) return var;
+    return _content.asCollection.add(key, pool);
   }
 
  private:

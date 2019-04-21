@@ -2,8 +2,8 @@
 #include <ESP8266WiFi.h>
 
 //USER CONFIGURED SECTION START//
-const char* ssid = "warz";
-const char* password = "parola!derezerva";
+const char* ssid = "";
+const char* password = "";
 const char* mqtt_server = "192.168.0.107";
 const int mqtt_port = 1883;
 const char *mqtt_user = "";
@@ -39,5 +39,3 @@ void setup(){
 void loop(){
  // in loop nu cred ca se face ceva, doar pe interrupt
 }
-
-

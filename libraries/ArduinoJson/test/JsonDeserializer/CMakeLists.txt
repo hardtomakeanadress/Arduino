@@ -1,5 +1,5 @@
 # ArduinoJson - arduinojson.org
-# Copyright Benoit Blanchon 2014-2018
+# Copyright Benoit Blanchon 2014-2019
 # MIT License
 
 add_executable(JsonDeserializerTests
@@ -9,7 +9,10 @@ add_executable(JsonDeserializerTests
 	deserializeJsonObject.cpp
 	deserializeJsonObjectStatic.cpp
 	deserializeJsonValue.cpp
+	deserializeJsonString.cpp
 	input_types.cpp
+	incomplete_input.cpp
+	invalid_input.cpp
 	nestingLimit.cpp
 )
 

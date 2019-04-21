@@ -1,5 +1,5 @@
 // ArduinoJson - arduinojson.org
-// Copyright Benoit Blanchon 2014-2018
+// Copyright Benoit Blanchon 2014-2019
 // MIT License
 
 #include <ArduinoJson.h>
@@ -7,22 +7,22 @@
 
 template <typename T, typename U>
 static void check(const char* input, U expected) {
-  DynamicJsonDocument variant;
+  DynamicJsonDocument doc(4096);
 
-  DeserializationError error = deserializeMsgPack(variant, input);
+  DeserializationError error = deserializeMsgPack(doc, input);
 
   REQUIRE(error == DeserializationError::Ok);
-  REQUIRE(variant.is<T>());
-  REQUIRE(variant.as<T>() == expected);
+  REQUIRE(doc.is<T>());
+  REQUIRE(doc.as<T>() == expected);
 }
 
 static void checkIsNull(const char* input) {
-  DynamicJsonDocument variant;
+  DynamicJsonDocument doc(4096);
 
-  DeserializationError error = deserializeMsgPack(variant, input);
+  DeserializationError error = deserializeMsgPack(doc, input);
 
   REQUIRE(error == DeserializationError::Ok);
-  REQUIRE(variant.as<JsonVariant>().isNull());
+  REQUIRE(doc.as<JsonVariant>().isNull());
 }
 
 TEST_CASE("deserialize MsgPack value") {

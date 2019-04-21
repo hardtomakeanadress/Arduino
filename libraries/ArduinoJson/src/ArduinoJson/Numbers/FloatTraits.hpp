@@ -1,5 +1,5 @@
 // ArduinoJson - arduinojson.org
-// Copyright Benoit Blanchon 2014-2018
+// Copyright Benoit Blanchon 2014-2019
 // MIT License
 
 #pragma once
@@ -7,6 +7,7 @@
 #include <stddef.h>  // for size_t
 #include <stdint.h>
 #include "../Configuration.hpp"
+#include "../Polyfills/alias_cast.hpp"
 #include "../Polyfills/math.hpp"
 
 namespace ARDUINOJSON_NAMESPACE {
@@ -98,12 +99,7 @@ struct FloatTraits<T, 8 /*64bits*/> {
   // we use this function to workaround platforms with single precision literals
   // (for example, when -fsingle-precision-constant is passed to GCC)
   static T forge(uint32_t msb, uint32_t lsb) {
-    union {
-      uint64_t integerBits;
-      T floatBits;
-    };
-    integerBits = (uint64_t(msb) << 32) | lsb;
-    return floatBits;
+    return alias_cast<T>((uint64_t(msb) << 32) | lsb);
   }
 };
 
@@ -150,12 +146,7 @@ struct FloatTraits<T, 4 /*32bits*/> {
   }
 
   static T forge(uint32_t bits) {
-    union {
-      uint32_t integerBits;
-      T floatBits;
-    };
-    integerBits = bits;
-    return floatBits;
+    return alias_cast<T>(bits);
   }
 
   static T nan() {

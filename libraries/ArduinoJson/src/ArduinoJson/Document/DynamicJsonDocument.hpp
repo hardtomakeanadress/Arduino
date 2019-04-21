@@ -1,5 +1,5 @@
 // ArduinoJson - arduinojson.org
-// Copyright Benoit Blanchon 2014-2018
+// Copyright Benoit Blanchon 2014-2019
 // MIT License
 
 #pragma once
@@ -12,17 +12,24 @@ namespace ARDUINOJSON_NAMESPACE {
 
 class DynamicJsonDocument : public JsonDocument {
  public:
-  DynamicJsonDocument(size_t capa = ARDUINOJSON_DEFAULT_POOL_SIZE)
-      : JsonDocument(allocPool(addPadding(capa))) {}
+  explicit DynamicJsonDocument(size_t capa) : JsonDocument(allocPool(capa)) {}
 
   DynamicJsonDocument(const DynamicJsonDocument& src)
-      : JsonDocument(allocPool(src.capacity())) {
-    copy(src);
+      : JsonDocument(allocPool(src.memoryUsage())) {
+    set(src);
   }
 
-  DynamicJsonDocument(const JsonDocument& src)
-      : JsonDocument(allocPool(src.capacity())) {
-    copy(src);
+  template <typename T>
+  DynamicJsonDocument(const T& src,
+                      typename enable_if<IsVisitable<T>::value>::type* = 0)
+      : JsonDocument(allocPool(src.memoryUsage())) {
+    set(src);
+  }
+
+  // disambiguate
+  DynamicJsonDocument(VariantRef src)
+      : JsonDocument(allocPool(src.memoryUsage())) {
+    set(src);
   }
 
   ~DynamicJsonDocument() {
@@ -31,19 +38,20 @@ class DynamicJsonDocument : public JsonDocument {
 
   DynamicJsonDocument& operator=(const DynamicJsonDocument& src) {
     reallocPoolIfTooSmall(src.memoryUsage());
-    copy(src);
+    set(src);
     return *this;
   }
 
   template <typename T>
-  DynamicJsonDocument& operator=(const JsonDocument& src) {
+  DynamicJsonDocument& operator=(const T& src) {
     reallocPoolIfTooSmall(src.memoryUsage());
-    copy(src);
+    set(src);
     return *this;
   }
 
  private:
-  MemoryPool allocPool(size_t capa) {
+  MemoryPool allocPool(size_t requiredSize) {
+    size_t capa = addPadding(requiredSize);
     return MemoryPool(reinterpret_cast<char*>(malloc(capa)), capa);
   }
 
