@@ -8,12 +8,9 @@
 
 #ifndef TinyGsmClientM590_h
 #define TinyGsmClientM590_h
+//#pragma message("TinyGSM:  TinyGsmClientM590")
 
 //#define TINY_GSM_DEBUG Serial
-
-#if !defined(TINY_GSM_RX_BUFFER)
-  #define TINY_GSM_RX_BUFFER 256
-#endif
 
 #define TINY_GSM_MUX_COUNT 2
 
@@ -39,21 +36,8 @@ enum RegStatus {
 };
 
 
-//============================================================================//
-//============================================================================//
-//                    Declaration of the TinyGsmM590 Class
-//============================================================================//
-//============================================================================//
-
-class TinyGsmM590
+class TinyGsmM590 : public TinyGsmModem
 {
-
-//============================================================================//
-//============================================================================//
-//                          The M590 Internal Client Class
-//============================================================================//
-//============================================================================//
-
 
 public:
 
@@ -75,6 +59,8 @@ public:
     sock_connected = false;
 
     at->sockets[mux] = this;
+    //  ^^ TODO: attach the socket here at init?  Or later at connect?
+    // Currently done inconsistently between modems
 
     return true;
   }
@@ -85,6 +71,10 @@ public:
     TINY_GSM_YIELD();
     rx.clear();
     sock_connected = at->modemConnect(host, port, mux);
+    // sock_connected = at->modemConnect(host, port, &mux);
+    // at->sockets[mux] = this;
+    // ^^ TODO: attach the socet after attempting connection or above at init?
+    // Currently done inconsistently between modems
     return sock_connected;
   }
 
@@ -134,7 +124,8 @@ public:
   virtual int read(uint8_t *buf, size_t size) {
     TINY_GSM_YIELD();
     size_t cnt = 0;
-    while (cnt < size) {
+    uint32_t _startMillis = millis();
+    while (cnt < size && millis() - _startMillis < _timeout) {
       size_t chunk = TinyGsmMin(size-cnt, rx.size());
       if (chunk > 0) {
         rx.get(buf, chunk);
@@ -145,7 +136,6 @@ public:
       // TODO: Read directly into user buffer?
       if (!rx.size() && sock_connected) {
         at->maintain();
-        //break;
       }
     }
     return cnt;
@@ -177,34 +167,17 @@ public:
   String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
 private:
-  TinyGsmM590*  at;
-  uint8_t       mux;
-  bool          sock_connected;
-  RxFifo        rx;
+  TinyGsmM590*   at;
+  uint8_t         mux;
+  bool            sock_connected;
+  RxFifo          rx;
 };
 
-//============================================================================//
-//============================================================================//
-//                          The M590 Has no Secure client!
-//============================================================================//
-//============================================================================//
-
-
-
-//============================================================================//
-//============================================================================//
-//                          The M590 Modem Functions
-//============================================================================//
-//============================================================================//
 
 public:
 
-#ifdef GSM_DEFAULT_STREAM
-  TinyGsmM590(Stream& stream = GSM_DEFAULT_STREAM)
-#else
   TinyGsmM590(Stream& stream)
-#endif
-    : stream(stream)
+    : TinyGsmModem(stream), stream(stream)
   {
     memset(sockets, 0, sizeof(sockets));
   }
@@ -212,11 +185,9 @@ public:
   /*
    * Basic functions
    */
-  bool begin() {
-    return init();
-  }
 
-  bool init() {
+  bool init(const char* pin = NULL) {
+    DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
     if (!testAT()) {
       return false;
     }
@@ -228,9 +199,13 @@ public:
     sendAT(GF("+CMEE=2"));
     waitResponse();
 #endif
-
+    DBG(GF("### Modem:"), getModemName());
     getSimStatus();
     return true;
+  }
+
+  String getModemName() {
+    return "Neoway M590";
   }
 
   void setBaud(unsigned long baud) {
@@ -240,10 +215,7 @@ public:
   bool testAT(unsigned long timeout = 10000L) {
     for (unsigned long start = millis(); millis() - start < timeout; ) {
       sendAT(GF(""));
-      if (waitResponse(200) == 1) {
-        delay(100);
-        return true;
-      }
+      if (waitResponse(200) == 1) return true;
       delay(100);
     }
     return false;
@@ -282,6 +254,14 @@ public:
 
   bool hasSSL() {
     return false;
+  }
+
+  bool hasWifi() {
+    return false;
+  }
+
+  bool hasGPRS() {
+    return true;
   }
 
   /*
@@ -389,7 +369,7 @@ public:
    * Generic network functions
    */
 
-  int getSignalQuality() {
+  int16_t getSignalQuality() {
     sendAT(GF("+CSQ"));
     if (waitResponse(GF(GSM_NL "+CSQ:")) != 1) {
       return 99;
@@ -403,20 +383,6 @@ public:
     RegStatus s = getRegistrationStatus();
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
   }
-
-  bool waitForNetwork(unsigned long timeout = 60000L) {
-    for (unsigned long start = millis(); millis() - start < timeout; ) {
-      if (isNetworkConnected()) {
-        return true;
-      }
-      delay(250);
-    }
-    return false;
-  }
-
-  /*
-   * WiFi functions
-   */
 
   /*
    * GPRS functions
@@ -474,6 +440,10 @@ public:
     return res == 1;
   }
 
+  /*
+   * IP Address functions
+   */
+
   String getLocalIP() {
     sendAT(GF("+XIIC?"));
     if (waitResponse(GF(GSM_NL "+XIIC:")) != 1) {
@@ -484,10 +454,6 @@ public:
     waitResponse();
     res.trim();
     return res;
-  }
-
-  IPAddress localIP() {
-    return TinyGsmIpFromString(getLocalIP());
   }
 
   /*
@@ -563,7 +529,11 @@ public:
 
   uint16_t getBattVoltage() TINY_GSM_ATTR_NOT_AVAILABLE;
 
-  int getBattPercent() TINY_GSM_ATTR_NOT_AVAILABLE;
+  int8_t getBattPercent() TINY_GSM_ATTR_NOT_AVAILABLE;
+
+  /*
+   * Client related functions
+   */
 
 protected:
 
@@ -587,7 +557,7 @@ protected:
     return false;
   }
 
-  int modemSend(const void* buff, size_t len, uint8_t mux) {
+  int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
     sendAT(GF("+TCPSEND="), mux, ',', len);
     if (waitResponse(GF(">")) != 1) {
       return 0;
@@ -622,31 +592,9 @@ protected:
 
 public:
 
-  /* Utilities */
-
-  template<typename T>
-  void streamWrite(T last) {
-    stream.print(last);
-  }
-
-  template<typename T, typename... Args>
-  void streamWrite(T head, Args... tail) {
-    stream.print(head);
-    streamWrite(tail...);
-  }
-
-  bool streamSkipUntil(char c) {
-    const unsigned long timeout = 1000L;
-    unsigned long startMillis = millis();
-    while (millis() - startMillis < timeout) {
-      while (millis() - startMillis < timeout && !stream.available()) {
-        TINY_GSM_YIELD();
-      }
-      if (stream.read() == c)
-        return true;
-    }
-    return false;
-  }
+  /*
+   Utilities
+   */
 
   template<typename... Args>
   void sendAT(Args... cmd) {

@@ -81,6 +81,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
   }
 }
 
+
 void SendMQTTData(){
   client.publish(humidity_topic,humidityData,true);
   delay(200);
