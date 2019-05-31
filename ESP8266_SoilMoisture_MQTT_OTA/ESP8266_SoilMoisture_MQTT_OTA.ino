@@ -15,8 +15,7 @@
 WiFiClient espClient;
 PubSubClient client(espClient);
 
-int soil_humidity;
-unsigned int readingInterval = 120;  //minutes
+unsigned int readingInterval = 60;  //minutes
 
 int  program_mode=3;  //   ProgramMode OFF=0; ProgramMode ON=1
 
@@ -96,22 +95,19 @@ void reconnectToServer() {
 }
 
 void handleSensorData(){
+  int soil_humidity_raw = 0;
+  
   digitalWrite(SENSORPWRPIN, HIGH);
   delay(500);
-  
-  soil_humidity = 0;
-  
-  for (int i= 1; i <= 10; i++) {
-    soil_humidity += map(analogRead(ADCPIN), 100, 600, 100, 0);
+
+  for (int i= 1; i <= 100; i++) {
+    soil_humidity_raw += analogRead(ADCPIN);
+    delay(100);
   }
 
-//  for (int i= 1; i <= 10; i++) {
-//    soil_humidity = soil_humidity + analogRead(ADCPIN);
-//  }
-
-  soil_humidity = soil_humidity / 10;
-
   digitalWrite(SENSORPWRPIN, LOW);
+  
+  int soil_humidity = map((soil_humidity_raw/100), 100, 600, 100, 0);
   
   String soilHumidity = String(soil_humidity);
   
