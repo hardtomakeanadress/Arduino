@@ -10,25 +10,38 @@
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 float Capacity = 0.0; // Capacity in mAh
-float Res_Value = 10.0;  // Resistor Value in Ohm
-float Vcc = 5; // Voltage of Arduino 5V pin ( Mesured by Multimeter )
+float Res_Value = 2.2;  // Resistor Value in Ohm
+float Vcc = 4.93; // Voltage of Arduino 5V pin ( Mesured by Multimeter )
 float Current = 0.0; // Current in Amp
 float mA=0;         // Current in mA
 float Bat_Volt = 0.0;  // Battery Voltage 
 float Res_Volt = 0.0;  // Voltage at lower end of the Resistor 
 float Bat_High = 4.2; // Battery High Voltage
-float Bat_Low = 3.2; // Discharge Cut Off Voltage
+float Bat_Low = 3.1; // Discharge Cut Off Voltage
 unsigned long previousMillis = 0; // Previous time in ms
 unsigned long millisPassed = 0;  // Current time in ms
+bool secondMenu = true;
 
 //************************ OLED Display Draw Function *******************************************************
 void draw(void) {
+  lcd.clear();
+  
   lcd.setCursor(0, 0);
-  lcd.print("Volts:");
-  lcd.print(Bat_Volt);
-  lcd.setCursor(0, 1);
   lcd.print("Capacity:");
   lcd.print(Capacity, 2);
+
+  lcd.setCursor(0, 1);
+  
+  if (secondMenu) {
+    lcd.print("Amps:");
+    lcd.print(Current);
+  }
+  else {
+    lcd.print("Volts:");
+    lcd.print(Bat_Volt);
+  }
+  
+  secondMenu = !secondMenu;
 }
 
 void setup() {
