@@ -10,56 +10,66 @@
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 float Capacity = 0.0; // Capacity in mAh
-float Res_Value = 2.2;  // Resistor Value in Ohm
-float Vcc = 4.93; // Voltage of Arduino 5V pin ( Mesured by Multimeter )
+float Res_Value = 10.0;  // Resistor Value in Ohm
+float Vcc = 5.2; // Voltage of Arduino 5V pin ( Mesured by Multimeter )
 float Current = 0.0; // Current in Amp
 float mA=0;         // Current in mA
 float Bat_Volt = 0.0;  // Battery Voltage 
 float Res_Volt = 0.0;  // Voltage at lower end of the Resistor 
 float Bat_High = 4.2; // Battery High Voltage
-float Bat_Low = 3.1; // Discharge Cut Off Voltage
+float Bat_Low = 3.0; // Discharge Cut Off Voltage
 unsigned long previousMillis = 0; // Previous time in ms
 unsigned long millisPassed = 0;  // Current time in ms
-bool secondMenu = true;
+bool secondMenu = false;
 
 //************************ OLED Display Draw Function *******************************************************
 void draw(void) {
   lcd.clear();
   
+  //first row
   lcd.setCursor(0, 0);
   lcd.print("Capacity:");
   lcd.print(Capacity, 2);
 
+  //second row
   lcd.setCursor(0, 1);
-  
+
   if (secondMenu) {
     lcd.print("Amps:");
-    lcd.print(Current);
+    lcd.print(Current);  
   }
-  else {
+  else{
     lcd.print("Volts:");
     lcd.print(Bat_Volt);
   }
-  
   secondMenu = !secondMenu;
 }
 
 void setup() {
+  Serial.begin(9600);
   lcd.begin();
   lcd.backlight();
   pinMode(MOSFET_Pin, OUTPUT);
   digitalWrite(MOSFET_Pin, LOW);  // MOSFET is off during the start
-   
 }
   
 //************ Measuring Battery Voltage ***********
 void measureBattery() {
-  Bat_Volt = analogRead(Bat_Pin) * Vcc / 1024.0;
+  float sumBat = 0.0;
+  for(int i = 1; i<=100; i++){
+    sumBat = sumBat + analogRead(Bat_Pin);    
+  }
+  Bat_Volt = (sumBat / 100) * Vcc / 1023.0;
 }
 
 // *********  Measuring Resistor Voltage ***********
 void measureResistor() {
-  Res_Volt = analogRead(Res_Pin) * Vcc / 1024.0;
+  
+  float sumRes = 0.0;
+  for (int i=1; i<=100; i++) {
+    sumRes = sumRes + analogRead(Res_Pin); 
+  }
+  Res_Volt = (sumRes / 100) * Vcc / 1023.0;
 }
 
 void makeCalculation() {
@@ -68,7 +78,7 @@ void makeCalculation() {
     digitalWrite(MOSFET_Pin, LOW);
     delay(1000);
   }
-  else if (Bat_Volt > Bat_Low) { // Check if the battery voltage is within the safe limit
+  else { // Check if the battery voltage is within the safe limit
     digitalWrite(MOSFET_Pin, HIGH);
     millisPassed = millis() - previousMillis;
     Current = (Bat_Volt - Res_Volt) / Res_Value;
@@ -83,5 +93,5 @@ void loop() {
   measureBattery();
   measureResistor();
   makeCalculation(); 
-  draw(); 
+  draw();
  }    
