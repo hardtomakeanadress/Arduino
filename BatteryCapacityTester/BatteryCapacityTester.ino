@@ -24,22 +24,28 @@ unsigned int internalResistance = 0;
 //************************ OLED Display Draw Function *******************************************************
 void draw(void) {
   lcd.clear();
-  
-  //first row
-  lcd.setCursor(0, 0);
-  lcd.print("Capacity:");
-  lcd.print(Capacity, 2);
-
-  //second row
-  lcd.setCursor(0, 1);
 
   if (secondMenu) {
-    lcd.print("Amps:");
+    //first row
+    lcd.setCursor(0, 0);
+    lcd.print("Volts: ");
+    lcd.print(Bat_Volt);
+
+    //second row
+    lcd.setCursor(0, 1);
+    lcd.print("Amps: ");
     lcd.print(Current);  
   }
   else{
-    lcd.print("Volts:");
-    lcd.print(Bat_Volt);
+    //first row
+    lcd.setCursor(0, 0);
+    lcd.print("Capacity: ");
+    lcd.print(Capacity, 2);
+  
+    //second row
+    lcd.setCursor(0, 1);
+    lcd.print("Int. Res: ");
+    lcd.print(internalResistance);
   }
   secondMenu = !secondMenu;
 }
@@ -56,11 +62,28 @@ void setup() {
 //measure battery internal resistance
 void measureInternalResistance() {
   delay(2000);
-  float sumBat = 0.0;
-  for(int i = 1; i<=100; i++){
-    sumBat = sumBat + analogRead(Bat_Pin);    
-  }
-  Bat_Volt = (sumBat / 100) * (Vcc / 1023.0);
+
+  //measure voltage with no load
+  measureBattery();
+  float noLoadVBat = Bat_Volt;
+  
+  digitalWrite(MOSFET_Pin, HIGH);
+  delay(1000);
+  
+  //measure voltage under load
+  measureBattery();
+ 
+  measureResistor();
+  
+  digitalWrite(MOSFET_Pin, LOW);
+
+  Current = (Bat_Volt - Res_Volt) / Res_Value;
+  
+  internalResistance = (noLoadVBat - Bat_Volt) / Current;
+  
+  Current = 0.0;
+  Bat_Volt = 0.0;
+  Res_Volt = 0.0;
 }
   
 //************ Measuring Battery Voltage ***********
