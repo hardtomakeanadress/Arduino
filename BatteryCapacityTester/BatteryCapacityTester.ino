@@ -1,5 +1,3 @@
-//In testing
-#include <Wire.h> 
 #include <LiquidCrystal_I2C.h>
 
 #define MOSFET_Pin 2
@@ -21,6 +19,7 @@ float Bat_Low = 3.0; // Discharge Cut Off Voltage
 unsigned long previousMillis = 0; // Previous time in ms
 unsigned long millisPassed = 0;  // Current time in ms
 bool secondMenu = false;
+unsigned int internalResistance = 0;
 
 //************************ OLED Display Draw Function *******************************************************
 void draw(void) {
@@ -48,28 +47,45 @@ void draw(void) {
 void setup() {
   Serial.begin(9600);
   lcd.begin();
-  lcd.backlight();
+//  lcd.backlight();
   pinMode(MOSFET_Pin, OUTPUT);
   digitalWrite(MOSFET_Pin, LOW);  // MOSFET is off during the start
+  measureInternalResistance();
 }
-  
-//************ Measuring Battery Voltage ***********
-void measureBattery() {
+
+//measure battery internal resistance
+void measureInternalResistance() {
+  delay(2000);
   float sumBat = 0.0;
   for(int i = 1; i<=100; i++){
     sumBat = sumBat + analogRead(Bat_Pin);    
   }
-  Bat_Volt = (sumBat / 100) * Vcc / 1023.0;
+  Bat_Volt = (sumBat / 100) * (Vcc / 1023.0);
+}
+  
+//************ Measuring Battery Voltage ***********
+void measureBattery() {
+  analogReference(DEFAULT);
+  analogRead(Bat_Pin);
+  delay(100);
+  float sumBat = 0.0;
+  for(int i = 1; i<=100; i++){
+    sumBat = sumBat + analogRead(Bat_Pin);    
+  }
+  Bat_Volt = (sumBat / 100) * (Vcc / 1023.0);
 }
 
 // *********  Measuring Resistor Voltage ***********
 void measureResistor() {
-  
+  analogReference(INTERNAL);
+  analogRead(Res_Pin);
+  //wait for voltage to stabilize                        
+  delay(100);
   float sumRes = 0.0;
   for (int i=1; i<=100; i++) {
     sumRes = sumRes + analogRead(Res_Pin); 
   }
-  Res_Volt = (sumRes / 100) * Vcc / 1023.0;
+  Res_Volt = (sumRes / 100) * (1.1 / 1023.0);
 }
 
 void makeCalculation() {
