@@ -1,15 +1,17 @@
+//needs to be redone from scratch
+
 #include <LiquidCrystal_I2C.h>
 
 #define MOSFET_Pin 2
-#define Bat_Pin A6
-#define Res_Pin A7
+#define Bat_Pin A0
+#define Res_Pin A1
 
 // Set the LCD address to 0x27 for a 16 chars and 2 line display
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 float Capacity = 0.0; // Capacity in mAh
 float Res_Value = 10.0;  // Resistor Value in Ohm
-float Vcc = 5.2; // Voltage of Arduino 5V pin ( Mesured by Multimeter )
+float Vcc = 4.92; // Should be measured at the 5V pin, by Multimeter )
 float Current = 0.0; // Current in Amp
 float mA=0;         // Current in mA
 float Bat_Volt = 0.0;  // Battery Voltage 
@@ -19,7 +21,8 @@ float Bat_Low = 3.0; // Discharge Cut Off Voltage
 unsigned long previousMillis = 0; // Previous time in ms
 unsigned long millisPassed = 0;  // Current time in ms
 bool secondMenu = false;
-unsigned int internalResistance = 0;
+bool internalResistanceCheck = true; //should be set to false by the function
+float internalResistance = 0.0;
 
 //************************ OLED Display Draw Function *******************************************************
 void draw(void) {
@@ -53,10 +56,8 @@ void draw(void) {
 void setup() {
   Serial.begin(9600);
   lcd.begin();
-//  lcd.backlight();
   pinMode(MOSFET_Pin, OUTPUT);
   digitalWrite(MOSFET_Pin, LOW);  // MOSFET is off during the start
-  measureInternalResistance();
 }
 
 //measure battery internal resistance
@@ -79,11 +80,18 @@ void measureInternalResistance() {
 
   Current = (Bat_Volt - Res_Volt) / Res_Value;
   
-  internalResistance = (noLoadVBat - Bat_Volt) / Current;
+  internalResistance = ((noLoadVBat - Bat_Volt) / Current)* 1000;
+  Serial.print("Bat_Volt: ");
+  Serial.println(Bat_Volt);
+  Serial.print("Res_Volt: ");
+  Serial.println(Res_Volt);
+  Serial.print("Current: ");
+  Serial.println(Current);
   
   Current = 0.0;
   Bat_Volt = 0.0;
   Res_Volt = 0.0;
+  internalResistanceCheck = false;
 }
   
 //************ Measuring Battery Voltage ***********
@@ -95,7 +103,15 @@ void measureBattery() {
   for(int i = 1; i<=100; i++){
     sumBat = sumBat + analogRead(Bat_Pin);    
   }
+  
   Bat_Volt = (sumBat / 100) * (Vcc / 1023.0);
+
+  if (Bat_Volt < 1) {
+    Bat_Volt = 0;
+  }
+  
+  Serial.print("Battery: ");
+  Serial.println(Bat_Volt);
 }
 
 // *********  Measuring Resistor Voltage ***********
@@ -109,6 +125,8 @@ void measureResistor() {
     sumRes = sumRes + analogRead(Res_Pin); 
   }
   Res_Volt = (sumRes / 100) * (1.1 / 1023.0);
+  Serial.print("Resistor: ");
+  Serial.println(Res_Volt);
 }
 
 void makeCalculation() {
@@ -129,6 +147,9 @@ void makeCalculation() {
 }
   
 void loop() {
+  if (internalResistanceCheck && (Bat_Volt > Bat_Low)) {
+    measureInternalResistance();  
+  }
   measureBattery();
   measureResistor();
   makeCalculation(); 
