@@ -14,8 +14,8 @@ IT IS DIFFERENT FROM NODEMCU BOARD OR WEMOS D1 MINI:
 #include <ArduinoOTA.h>
 // **********************************************************
 
-const char* ssid     = "warz";
-const char* password = "parola!derezerva";
+const char* ssid     = "";
+const char* password = "";
 
 const char* mqttServer = "192.168.0.107";
 const int mqttPort = 1883;
@@ -24,9 +24,6 @@ const char *control_Ender3DPrinter = "home/rooms/playroom/control/Ender3DPrinter
 const char *Ender3DPrinter_status = "home/rooms/playroom/Ender3DPrinter/status"; // topic where we publish the actual 3d printer status
 
 char Ender3DPrinterStatus[5];
-
-//int ledPin = 4;
-//int onBoardLed = 2;
 
 int gpio_13_led = 13;
 int gpio_12_relay = 12;
@@ -39,7 +36,7 @@ PubSubClient client(espClient);
 
 void reconnectToServer() {
   while (!client.connected()) {
-    if (client.connect("PlayroomEnder3DPrinterControl")) {
+    if (client.connect("Ender3DPrinter")) {
       client.subscribe(control_Ender3DPrinter);
       delay(200);
       publishEnder3DPrinterStatus();
@@ -51,7 +48,7 @@ void reconnectToServer() {
 }
 
 void callback(char* topic, byte* payload, unsigned int length) {
-  if (strcmp(topic,"home/rooms/playroom/control/control_Ender3DPrinter") == 0){
+  if (strcmp(topic,"home/rooms/playroom/control/Ender3DPrinter") == 0){
     char payloadMessage[length + 1];
     for (int i = 0; i < length; i++) {
       payloadMessage[i] = char(payload[i]);
@@ -70,13 +67,13 @@ void publishEnder3DPrinterStatus(){
 void setup(){
   // Add support for OTA***************************************
   //Hostname defaults to esp8266-[ChipID]
-  ArduinoOTA.setHostname("PlayroomEnder3DPrinterControl");
-  ArduinoOTA.setPassword("bemobere");
+  ArduinoOTA.setHostname("Ender3DPrinter");
+//  ArduinoOTA.setPassword("bemobere");
   ArduinoOTA.onError([](ota_error_t error) { ESP.restart(); });
   ArduinoOTA.begin();  /* setup the OTA server */
   // **********************************************************
   
-  WiFi.hostname("PlayroomEnder3DPrinterControl");
+  WiFi.hostname("Ender3DPrinter");
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
@@ -95,22 +92,20 @@ void setup(){
 void controlEnder3DPrinter() {
     if ((newEnder3DPrinterState == 1) && (currentEnder3DPrinterState == 0)) {
       digitalWrite(gpio_12_relay, HIGH);
-      digitalWrite(gpio_13_led, LOW);
       currentEnder3DPrinterState = 1;
       publishEnder3DPrinterStatus(); 
     }
-    else if ((newEnder3DPrinterState == 1) && (currentEnder3DPrinterState == 1)) {
-      return;
-    }
-    else if ((newEnder3DPrinterState == 0) && (currentEnder3DPrinterState == 0)) {
-      return;
-    }
+
     else if ((newEnder3DPrinterState == 0) && (currentEnder3DPrinterState == 1)) {
       digitalWrite(gpio_12_relay, LOW);
-      digitalWrite(gpio_13_led, HIGH);
       currentEnder3DPrinterState = 0;
       publishEnder3DPrinterStatus(); 
     }
+    
+    else  {
+      return;
+    }
+    
 }
 
 void loop(){
