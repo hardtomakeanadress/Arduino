@@ -9,6 +9,7 @@
 #define DHTTYPE DHT11
 
 const int transmit_pin = 12;
+unsigned int sleepCounter;
 
 float h,t,light,volt;
 //#define backlight_pin 11
@@ -133,5 +134,7 @@ void loop(void) {
     run_asleep();
   }
 
-  LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
+  for (sleepCounter = 7; sleepCounter > 0; sleepCounter--){
+    LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);  
+  }
 }
