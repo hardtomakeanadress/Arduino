@@ -4,10 +4,10 @@
 #define DHTPIN 2
 //this is the "camera mica" channel
 
-String apiKey        = "ONF60OPAXNXUWG3X";
-const char* ssid     = "warz";
-const char* password = "parola!derezerva";
-const char* server   = "api.thingspeak.com";
+String apiKey        = "";
+const char* ssid     = "";
+const char* password = "";
+const char* server   = "";
 DHT dht(DHTPIN, DHTTYPE);
 WiFiClient client;
 
