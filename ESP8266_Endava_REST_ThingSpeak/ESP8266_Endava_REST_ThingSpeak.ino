@@ -2,12 +2,16 @@
 #include "DHT.h"
 #define DHTTYPE DHT11
 #define DHTPIN 2
-//this is the "camera mica" channel
 
 String apiKey        = "";
 const char* ssid     = "";
 const char* password = "";
 const char* server   = "";
+
+unsigned long startMillis = millis();
+unsigned long currentMillis;
+unsigned long interval = 30000;  //30 sec
+
 DHT dht(DHTPIN, DHTTYPE);
 WiFiClient client;
 
@@ -19,17 +23,27 @@ void setup() {
   }
 }
 
+bool runTime() {
+  currentMillis = millis();
+  if (currentMillis - startMillis >= interval){
+    startMillis = currentMillis;  //IMPORTANT to save the start time 
+    return true;
+  }
+  else
+    return false;
+}
+
 void loop() {
-  float h = dht.readHumidity();
-  float t = dht.readTemperature();
   
-  if (client.connect(server,80)) {  // "184.106.153.149" or api.thingspeak.com
+  if (runTime()&&(client.connect(server,80))) {  // "184.106.153.149" or api.thingspeak.com
+    float h = dht.readHumidity();
+    float t = dht.readTemperature();
+    delay(2000);
     String postStr = apiKey;
     postStr +="&field1=";
     postStr += String(t);
     postStr +="&field2=";
     postStr += String(h);
-    postStr += "\r\n\r\n";
   
     client.print("POST /update HTTP/1.1\n");
     client.print("Host: api.thingspeak.com\n");
@@ -42,7 +56,4 @@ void loop() {
     client.print(postStr);
   }
 client.stop();
-
-// thingspeak needs minimum 15 sec delay between updates
-delay(60000);
 }
