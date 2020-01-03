@@ -11,8 +11,8 @@
 #include <ArduinoOTA.h>
 // **********************************************************
 
-const char* ssid        = "warz";
-const char* password    = "parola!derezerva";
+const char* ssid        = "";
+const char* password    = "";
 const char* mqtt_server = "192.168.0.107";
 const int mqtt_port     = 1883;
 
