@@ -29,6 +29,7 @@ static const char GSM_OK[] TINY_GSM_PROGMEM    = "OK" GSM_NL;
 static const char GSM_ERROR[] TINY_GSM_PROGMEM = "ERROR" GSM_NL;
 #if defined       TINY_GSM_DEBUG
 static const char GSM_CME_ERROR[] TINY_GSM_PROGMEM = GSM_NL "+CME ERROR:";
+static const char GSM_CMS_ERROR[] TINY_GSM_PROGMEM = GSM_NL "+CMS ERROR:";
 #endif
 
 enum RegStatus {
@@ -221,9 +222,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
     if (waitResponse(10000L) != 1) { return false; }
     // After booting, modem sends out messages as each of its
     // internal modules loads.  The final message is "PB DONE".
-    if (waitResponse(40000L, GF(GSM_NL "PB DONE")) != 1) {
-      return false;
-    }
+    if (waitResponse(40000L, GF(GSM_NL "PB DONE")) != 1) { return false; }
     return init();
   }
 
@@ -233,8 +232,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
   }
 
   bool radioOffImpl() {
-    sendAT(GF("+CFUN=4"));
-    if (waitResponse(10000L) != 1) { return false; }
+    if (!setPhoneFunctionality(4)) { return false; }
     delay(3000);
     return true;
   }
@@ -242,6 +240,11 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
   bool sleepEnableImpl(bool enable = true) {
     sendAT(GF("+CSCLK="), enable);
     return waitResponse() == 1;
+  }
+
+  bool setPhoneFunctionalityImpl(uint8_t fun, bool reset = false) {
+    sendAT(GF("+CFUN="), fun, reset ? ",1" : "");
+    return waitResponse(10000L) == 1;
   }
 
   /*
@@ -582,9 +585,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
     for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {
       // +CIPCLOSE:<link0_state>,<link1_state>,...,<link9_state>
       bool muxState = stream.parseInt();
-      if (sockets[muxNo]) {
-        sockets[muxNo]->sock_connected = muxState;
-      }
+      if (sockets[muxNo]) { sockets[muxNo]->sock_connected = muxState; }
     }
     waitResponse();  // Should be an OK at the end
     if (!sockets[mux]) return false;
@@ -601,10 +602,11 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
                       GsmConstStr r2 = GFP(GSM_ERROR),
 #if defined TINY_GSM_DEBUG
                       GsmConstStr r3 = GFP(GSM_CME_ERROR),
+                      GsmConstStr r4 = GFP(GSM_CMS_ERROR),
 #else
-                      GsmConstStr r3 = NULL,
+                      GsmConstStr r3 = NULL, GsmConstStr r4 = NULL,
 #endif
-                      GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
+                      GsmConstStr r5 = NULL) {
     /*String r1s(r1); r1s.trim();
     String r2s(r2); r2s.trim();
     String r3s(r3); r3s.trim();
@@ -694,10 +696,11 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
                       GsmConstStr r2 = GFP(GSM_ERROR),
 #if defined TINY_GSM_DEBUG
                       GsmConstStr r3 = GFP(GSM_CME_ERROR),
+                      GsmConstStr r4 = GFP(GSM_CMS_ERROR),
 #else
-                      GsmConstStr r3 = NULL,
+                      GsmConstStr r3 = NULL, GsmConstStr r4 = NULL,
 #endif
-                      GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
+                      GsmConstStr r5 = NULL) {
     String data;
     return waitResponse(timeout_ms, data, r1, r2, r3, r4, r5);
   }
@@ -706,15 +709,16 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
                       GsmConstStr r2 = GFP(GSM_ERROR),
 #if defined TINY_GSM_DEBUG
                       GsmConstStr r3 = GFP(GSM_CME_ERROR),
+                      GsmConstStr r4 = GFP(GSM_CMS_ERROR),
 #else
-                      GsmConstStr r3 = NULL,
+                      GsmConstStr r3 = NULL, GsmConstStr r4 = NULL,
 #endif
-                      GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
+                      GsmConstStr r5 = NULL) {
     return waitResponse(1000, r1, r2, r3, r4, r5);
   }
 
  public:
-  Stream&           stream;
+  Stream& stream;
 
  protected:
   GsmClientSim5360* sockets[TINY_GSM_MUX_COUNT];

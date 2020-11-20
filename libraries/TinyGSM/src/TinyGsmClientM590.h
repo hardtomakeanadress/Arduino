@@ -26,6 +26,7 @@ static const char GSM_OK[] TINY_GSM_PROGMEM    = "OK" GSM_NL;
 static const char GSM_ERROR[] TINY_GSM_PROGMEM = "ERROR" GSM_NL;
 #if defined       TINY_GSM_DEBUG
 static const char GSM_CME_ERROR[] TINY_GSM_PROGMEM = GSM_NL "+CME ERROR:";
+static const char GSM_CMS_ERROR[] TINY_GSM_PROGMEM = GSM_NL "+CMS ERROR:";
 #endif
 
 enum RegStatus {
@@ -172,8 +173,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590>,
  protected:
   bool restartImpl() {
     if (!testAT()) { return false; }
-    sendAT(GF("+CFUN=15"));
-    if (waitResponse(10000L) != 1) { return false; }
+    if (!setPhoneFunctionality(15)) { return false; }
     // MODEM:STARTUP
     waitResponse(60000L, GF(GSM_NL "+PBREADY" GSM_NL));
     return init();
@@ -187,6 +187,11 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590>,
   bool sleepEnableImpl(bool enable = true) {
     sendAT(GF("+ENPWRSAVE="), enable);
     return waitResponse() == 1;
+  }
+
+  bool setPhoneFunctionalityImpl(uint8_t fun, bool reset = false) {
+    sendAT(GF("+CFUN="), fun, reset ? ",1" : "");
+    return waitResponse(10000L) == 1;
   }
 
   /*
@@ -351,10 +356,11 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590>,
                       GsmConstStr r2 = GFP(GSM_ERROR),
 #if defined TINY_GSM_DEBUG
                       GsmConstStr r3 = GFP(GSM_CME_ERROR),
+                      GsmConstStr r4 = GFP(GSM_CMS_ERROR),
 #else
-                      GsmConstStr r3 = NULL,
+                      GsmConstStr r3 = NULL, GsmConstStr r4 = NULL,
 #endif
-                      GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
+                      GsmConstStr r5 = NULL) {
     /*String r1s(r1); r1s.trim();
     String r2s(r2); r2s.trim();
     String r3s(r3); r3s.trim();
@@ -401,9 +407,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590>,
             } else {
               DBG("### Got: ", len, "->", sockets[mux]->rx.free());
             }
-            while (len--) {
-              moveCharFromStreamToFifo(mux);
-            }
+            while (len--) { moveCharFromStreamToFifo(mux); }
             // TODO(?): Handle lost characters
             if (len_orig > sockets[mux]->available()) {
               DBG("### Fewer characters received than expected: ",
@@ -437,10 +441,11 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590>,
                       GsmConstStr r2 = GFP(GSM_ERROR),
 #if defined TINY_GSM_DEBUG
                       GsmConstStr r3 = GFP(GSM_CME_ERROR),
+                      GsmConstStr r4 = GFP(GSM_CMS_ERROR),
 #else
-                      GsmConstStr r3 = NULL,
+                      GsmConstStr r3 = NULL, GsmConstStr r4 = NULL,
 #endif
-                      GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
+                      GsmConstStr r5 = NULL) {
     String data;
     return waitResponse(timeout_ms, data, r1, r2, r3, r4, r5);
   }
@@ -449,15 +454,16 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590>,
                       GsmConstStr r2 = GFP(GSM_ERROR),
 #if defined TINY_GSM_DEBUG
                       GsmConstStr r3 = GFP(GSM_CME_ERROR),
+                      GsmConstStr r4 = GFP(GSM_CMS_ERROR),
 #else
-                      GsmConstStr r3 = NULL,
+                      GsmConstStr r3 = NULL, GsmConstStr r4 = NULL,
 #endif
-                      GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
+                      GsmConstStr r5 = NULL) {
     return waitResponse(1000, r1, r2, r3, r4, r5);
   }
 
  public:
-  Stream&        stream;
+  Stream& stream;
 
  protected:
   GsmClientM590* sockets[TINY_GSM_MUX_COUNT];
