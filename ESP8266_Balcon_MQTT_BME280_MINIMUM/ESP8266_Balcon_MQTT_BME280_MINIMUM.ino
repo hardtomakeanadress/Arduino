@@ -24,8 +24,8 @@ char temperatureData[10];
 char pressureData[10];
 char voltageData[10];
 
-const char* ssid     = "warz2";
-const char* password = "parola!derezerva";
+const char* ssid     = "";
+const char* password = "";
 
 const char* mqttServer = "192.168.0.107";
 const int mqttPort = 1883;
